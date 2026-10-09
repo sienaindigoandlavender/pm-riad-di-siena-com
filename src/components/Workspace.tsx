@@ -81,8 +81,8 @@ export function Workspace({
     <div className="flex min-h-dvh">
       <Sidebar ws={ws} view={view} open={menu} onClose={() => setMenu(false)} />
 
-      <main className={`min-w-0 flex-1 ${open ? "md:me-[440px]" : ""}`}>
-        <div className="sticky top-0 z-10 flex items-center border-b border-line-soft bg-white/85 px-4 py-2.5 backdrop-blur-xl md:hidden">
+      <main className={`min-w-0 flex-1 bg-ground ${open ? "md:me-[440px]" : ""}`}>
+        <div className="sticky top-0 z-10 flex items-center border-b border-line-soft bg-ground/85 px-4 py-2.5 backdrop-blur-xl md:hidden">
           <button
             type="button"
             className="p-1"
@@ -100,7 +100,7 @@ export function Workspace({
           </button>
         </div>
 
-        <div className="mx-auto max-w-[760px] px-2 pb-28 pt-6 md:px-10 md:pt-12">
+        <div className="mx-auto max-w-[760px] px-2 pb-28 pt-4 md:px-10 md:pt-8">
           <Heading
             view={view}
             title={heading.title}
@@ -159,7 +159,7 @@ export function Workspace({
   );
 }
 
-/** The big coloured title. On Today, a ring fills as the day's tasks get done. */
+/** The hero: a block of the list's colour with the title set large in white. On Today, a ring fills as tasks get done. */
 function Heading({
   view,
   title,
@@ -173,7 +173,9 @@ function Heading({
   topLevel: Task[];
 }) {
   const now = today();
+  const open = topLevel.filter((t) => !t.done);
   let ring: { done: number; total: number } | null = null;
+  let stats: { n: number; label: string }[] = [];
   if (view.kind === "today") {
     const mine = topLevel.filter(
       (t) =>
@@ -182,53 +184,95 @@ function Heading({
         (t.done && t.done_at !== null && t.done_at.slice(0, 10) === now),
     );
     ring = { done: mine.filter((t) => t.done).length, total: mine.length };
+    const late = open.filter(
+      (t) =>
+        t.planned_for !== now &&
+        t.due_date !== now &&
+        ((t.planned_for !== null && t.planned_for < now) ||
+          (t.due_date !== null && t.due_date < now)),
+    ).length;
+    stats = [
+      { n: ring.total - ring.done, label: "to go" },
+      ...(late ? [{ n: late, label: "from earlier" }] : []),
+    ];
+  } else if (view.kind === "project") {
+    const mine = topLevel.filter((t) => t.project_id === view.id);
+    stats = [
+      { n: mine.filter((t) => !t.done).length, label: "open" },
+      { n: mine.filter((t) => t.done).length, label: "done this month" },
+    ];
+  } else if (view.kind === "upcoming") {
+    stats = [
+      { n: open.filter((t) => t.due_date && t.due_date >= now).length, label: "with a date ahead" },
+    ];
+  } else if (view.kind === "inbox") {
+    stats = [
+      { n: open.filter((t) => t.project_id === null).length, label: "waiting for a project" },
+    ];
+  } else {
+    stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
   return (
-    <header className="mb-6 flex items-end justify-between gap-4 px-4">
-      <div className="min-w-0">
-        {view.kind === "today" ? (
-          <p className="text-[15px] font-medium text-ink-3">{longDate(now)}</p>
-        ) : null}
-        <h1
-          className="truncate text-[40px] font-bold leading-[1.05] tracking-[-0.025em] md:text-[48px]"
-          style={{ color }}
-        >
-          {title}
-        </h1>
+    <header
+      className="relative mx-2 mb-6 overflow-hidden rounded-[28px] px-6 pb-6 pt-5 text-white md:mx-0 md:px-8 md:pb-8 md:pt-7"
+      style={{ background: color }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute -end-16 -top-24 size-72 rounded-full bg-white/10"
+      />
+      <div className="relative flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[15px] font-medium text-white/80">
+            {view.kind === "today" ? longDate(now) : "\u00a0"}
+          </p>
+          <h1 className="truncate text-[48px] font-bold leading-[1] tracking-[-0.035em] md:text-[64px]">
+            {title}
+          </h1>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {stats.map((st) => (
+              <span
+                key={st.label}
+                className="rounded-full bg-white/20 px-3 py-1 text-[14px] font-medium tabular-nums"
+              >
+                {st.n} {st.label}
+              </span>
+            ))}
+          </div>
+        </div>
+        {ring && ring.total > 0 ? <Ring {...ring} /> : null}
       </div>
-      {ring && ring.total > 0 ? <Ring {...ring} color={color} /> : null}
     </header>
   );
 }
 
-function Ring({ done, total, color }: { done: number; total: number; color: string }) {
-  const r = 22;
+function Ring({ done, total }: { done: number; total: number }) {
+  const r = 34;
   const c = 2 * Math.PI * r;
   const pct = total ? done / total : 0;
   return (
-    <div className="flex items-center gap-3">
-      <div className="text-end">
-        <p className="text-[22px] font-bold leading-none tabular-nums">
-          {done}
-          <span className="text-ink-3">/{total}</span>
-        </p>
-        <p className="mt-1 text-[13px] text-ink-3">{done === total ? "All done" : "done"}</p>
-      </div>
-      <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden className="-rotate-90">
-        <circle cx="28" cy="28" r={r} fill="none" stroke="#E9E7E2" strokeWidth="6" />
+    <div className="relative shrink-0">
+      <svg width="88" height="88" viewBox="0 0 88 88" aria-hidden className="-rotate-90">
+        <circle cx="44" cy="44" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="9" />
         <circle
-          cx="28"
-          cy="28"
+          cx="44"
+          cy="44"
           r={r}
           fill="none"
-          stroke={color}
-          strokeWidth="6"
+          stroke="#fff"
+          strokeWidth="9"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 500ms cubic-bezier(0.22,1,0.36,1)" }}
+          style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.22,1,0.36,1)" }}
         />
       </svg>
+      <p className="absolute inset-0 flex flex-col items-center justify-center text-[20px] font-bold leading-none tabular-nums">
+        {done}/{total}
+        <span className="mt-1 text-[11px] font-medium text-white/80">
+          {done === total ? "all done" : "done"}
+        </span>
+      </p>
     </div>
   );
 }
@@ -258,19 +302,19 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-9 first:mt-0">
+    <section className="mt-8 first:mt-0">
       {title ? (
-        <div className="flex items-baseline justify-between border-b border-line px-4 pb-2">
-          <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+        <div className="flex items-baseline justify-between px-4 pb-2.5">
+          <h2 className="text-[20px] font-bold tracking-[-0.015em]">
             {title}
             {count !== undefined ? (
-              <span className="ms-2 font-normal text-ink-3">{count}</span>
+              <span className="ms-2 font-semibold text-ink-3">{count}</span>
             ) : null}
           </h2>
           {action}
         </div>
       ) : null}
-      <ul>{children}</ul>
+      <ul className="mx-2 overflow-hidden rounded-[18px] bg-white md:mx-0">{children}</ul>
     </section>
   );
 }
@@ -294,7 +338,8 @@ function QuickAdd({
         onAdd(t);
         setValue("");
       }}
-      className="mb-2 flex items-center gap-3.5 px-4 py-2"
+      className="mx-2 mb-4 flex items-center gap-3.5 rounded-[18px] bg-white px-4 py-3.5 focus-within:ring-2 md:mx-0"
+      style={{ ["--tw-ring-color" as string]: color }}
     >
       <span
         className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[18px] font-medium leading-none text-white"
@@ -334,7 +379,7 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
     <button
       type="button"
       onClick={() => plan(t)}
-      className="rounded-full bg-accent-soft px-3 py-1 text-[13px] font-medium text-accent md:opacity-0 md:group-hover:opacity-100"
+      className="whitespace-nowrap rounded-full bg-accent-soft px-3 py-1 text-[13px] font-medium text-accent md:opacity-0 md:group-hover:opacity-100"
     >
       Do today
     </button>
@@ -632,23 +677,19 @@ function Sidebar({
       <Link
         href={href}
         onClick={onClose}
-        className={`flex flex-col gap-2 rounded-[12px] p-2.5 transition-colors ${
-          active ? "text-white" : "bg-white text-ink hover:bg-white/70"
+        aria-current={active ? "page" : undefined}
+        className={`flex flex-col gap-3 rounded-[16px] p-3 text-white transition-transform active:scale-[0.98] ${
+          active ? "ring-2 ring-ink ring-offset-2 ring-offset-white" : ""
         }`}
-        style={active ? { background: SMART[kind] } : undefined}
+        style={{ background: SMART[kind] }}
       >
         <span className="flex items-start justify-between">
-          <span
-            className="flex size-7 items-center justify-center rounded-full"
-            style={{ background: active ? "rgba(255,255,255,0.25)" : SMART[kind] }}
-          >
+          <span className="flex size-8 items-center justify-center rounded-full bg-white/25">
             {ICONS[kind]}
           </span>
-          <span className="text-[22px] font-bold leading-none tabular-nums">{counts[kind]}</span>
+          <span className="text-[26px] font-bold leading-none tabular-nums">{counts[kind]}</span>
         </span>
-        <span className={`text-[14px] font-semibold ${active ? "text-white" : "text-ink-2"}`}>
-          {label}
-        </span>
+        <span className="text-[15px] font-semibold">{label}</span>
       </Link>
     );
   };
@@ -657,7 +698,7 @@ function Sidebar({
     <>
       {open ? <div className="fixed inset-0 z-30 bg-black/25 md:hidden" onClick={onClose} /> : null}
       <nav
-        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto border-e border-line-soft bg-ground px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
+        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto border-e border-line-soft bg-white px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
           open ? "flex" : "hidden"
         }`}
       >
@@ -681,7 +722,7 @@ function Sidebar({
                   href={`/p/${p.id}`}
                   onClick={onClose}
                   className={`flex items-center gap-3 rounded-[10px] px-2 py-2 ${
-                    active ? "bg-white" : "hover:bg-white/60"
+                    active ? "bg-ground" : "hover:bg-ground/60"
                   }`}
                 >
                   <span
@@ -725,7 +766,7 @@ function Sidebar({
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => !name.trim() && setAdding(false)}
                 placeholder="Project name"
-                className="w-full rounded-[10px] bg-white px-3 py-2 text-[15px] outline-none ring-2 ring-accent"
+                className="w-full rounded-[10px] bg-ground px-3 py-2 text-[15px] outline-none ring-2 ring-accent"
               />
             </form>
           ) : (
