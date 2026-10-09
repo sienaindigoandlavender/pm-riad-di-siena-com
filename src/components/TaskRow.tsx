@@ -1,17 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { shortDate, today } from "@/lib/dates";
 import type { Project, Task } from "@/lib/types";
 
+/** Reminders-style check: a ring in the project's colour that fills when done. */
 export function Check({
   done,
   onToggle,
-  size = 20,
+  color = "#007AFF",
+  size = 22,
 }: {
   done: boolean;
   onToggle: () => void;
+  color?: string;
   size?: number;
 }) {
+  const [pop, setPop] = useState(false);
   return (
     <button
       type="button"
@@ -20,12 +25,17 @@ export function Check({
       aria-label={done ? "Mark as not done" : "Mark as done"}
       onClick={(e) => {
         e.stopPropagation();
+        setPop(true);
         onToggle();
       }}
-      className={`flex shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
-        done ? "border-ink bg-ink" : "border-ink-3 hover:border-ink"
-      }`}
-      style={{ width: size, height: size }}
+      onAnimationEnd={() => setPop(false)}
+      className={`flex shrink-0 items-center justify-center rounded-full transition-colors ${pop ? "pm-pop" : ""}`}
+      style={{
+        width: size,
+        height: size,
+        border: `1.75px solid ${done ? color : "#C7C7CC"}`,
+        background: done ? color : "transparent",
+      }}
     >
       {done ? (
         <svg viewBox="0 0 12 12" width={size * 0.55} height={size * 0.55} aria-hidden>
@@ -33,7 +43,7 @@ export function Check({
             d="M2.5 6.2 5 8.5 9.5 3.5"
             fill="none"
             stroke="#fff"
-            strokeWidth="1.8"
+            strokeWidth="1.9"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -43,12 +53,28 @@ export function Check({
   );
 }
 
-const FLAG = ["", "!", "!!", "!!!"];
+export function Flag({ level }: { level: number }) {
+  if (!level) return null;
+  const color = level === 3 ? "#FF3B30" : level === 2 ? "#FF9500" : "#FFCC00";
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      width="15"
+      height="15"
+      aria-label={`Priority ${level}`}
+      className="shrink-0"
+    >
+      <path d="M3.5 14.5V2" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M4 2.5h8.2l-2 3 2 3H4z" fill={color} />
+    </svg>
+  );
+}
 
-/** One task on a list: check, title, and a quiet line of facts. */
+/** One task on a list. */
 export function TaskRow({
   task,
   project,
+  color,
   subtasks,
   selected,
   showProject = true,
@@ -58,6 +84,7 @@ export function TaskRow({
 }: {
   task: Task;
   project?: Project;
+  color: string;
   subtasks?: { done: number; total: number };
   selected?: boolean;
   showProject?: boolean;
@@ -67,50 +94,62 @@ export function TaskRow({
 }) {
   const now = today();
   const overdue = !task.done && task.due_date !== null && task.due_date < now;
-  const meta: React.ReactNode[] = [];
-  if (showProject && project) meta.push(<span key="p">{project.name}</span>);
-  if (task.due_date)
-    meta.push(
-      <span key="d" className={overdue ? "text-danger" : undefined}>
-        {shortDate(task.due_date, now)}
-      </span>,
-    );
-  if (subtasks && subtasks.total > 0)
-    meta.push(
-      <span key="s">
-        {subtasks.done}/{subtasks.total}
-      </span>,
-    );
+  const hasMeta =
+    (showProject && project) || task.due_date || (subtasks && subtasks.total > 0) || task.notes;
 
   return (
     <li
       onClick={onOpen}
-      className={`group flex cursor-default items-start gap-3 border-b border-line-soft px-3 py-2.5 transition-colors ${
-        selected ? "bg-accent-soft" : "hover:bg-panel"
+      className={`group relative flex cursor-default items-start gap-3.5 ps-4 pe-3 transition-colors ${
+        selected ? "bg-accent-soft" : "hover:bg-ground/70"
       }`}
     >
-      <div className="pt-[1px]">
-        <Check done={task.done} onToggle={onToggle} />
+      <div className="py-3">
+        <Check done={task.done} onToggle={onToggle} color={color} />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className={`truncate ${task.done ? "text-ink-3 line-through" : "text-ink"}`}>
-          {task.priority > 0 ? (
-            <span className="me-1.5 font-bold text-danger">{FLAG[task.priority]}</span>
+      <div className="min-w-0 flex-1 border-b border-line-soft py-3 pe-1 group-last:border-b-0">
+        <div className="flex items-center gap-2">
+          <Flag level={task.done ? 0 : task.priority} />
+          <p className={`truncate text-[16px] ${task.done ? "text-ink-3" : "text-ink"}`}>
+            {task.title}
+          </p>
+          {action ? (
+            <div className="ms-auto" onClick={(e) => e.stopPropagation()}>
+              {action}
+            </div>
           ) : null}
-          {task.title}
-        </p>
-        {meta.length ? (
-          <p className="mt-0.5 flex flex-wrap gap-x-2 text-[13px] text-ink-3">
-            {meta.map((m, i) => (
-              <span key={i} className="flex gap-x-2">
-                {i > 0 ? <span aria-hidden>·</span> : null}
-                {m}
+        </div>
+        {hasMeta ? (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-3">
+            {showProject && project ? (
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full" style={{ background: color }} />
+                {project.name}
               </span>
-            ))}
+            ) : null}
+            {task.due_date ? (
+              <span className={overdue ? "font-medium text-danger" : undefined}>
+                {shortDate(task.due_date, now)}
+              </span>
+            ) : null}
+            {subtasks && subtasks.total > 0 ? (
+              <span>
+                {subtasks.done} of {subtasks.total}
+              </span>
+            ) : null}
+            {task.notes ? (
+              <svg viewBox="0 0 16 16" width="13" height="13" aria-label="Has notes">
+                <path
+                  d="M3 4h10M3 8h10M3 12h6"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            ) : null}
           </p>
         ) : null}
       </div>
-      {action ? <div onClick={(e) => e.stopPropagation()}>{action}</div> : null}
     </li>
   );
 }

@@ -6,18 +6,20 @@ import { PRIORITY_LABEL, type Task } from "@/lib/types";
 import { Check } from "./TaskRow";
 import type { WorkspaceApi } from "./useWorkspace";
 
-const label = "block text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3";
+const label = "block text-[13px] font-semibold text-ink-2";
 const field =
-  "w-full rounded-[8px] border border-line bg-white px-3 py-2 text-[15px] outline-none focus:border-accent";
+  "w-full rounded-[10px] bg-ground px-3 py-2.5 text-[15px] outline-none focus:ring-2 focus:ring-accent";
 
 /** Everything about one task. Changes save as you go. */
 export function TaskPanel({
   task,
   ws,
+  color,
   onClose,
 }: {
   task: Task;
   ws: WorkspaceApi;
+  color: string;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(task.title);
@@ -58,18 +60,18 @@ export function TaskPanel({
   const plannedToday = task.planned_for === now;
 
   return (
-    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:inset-y-0 md:start-auto md:end-0 md:w-[420px] md:border-s md:border-line">
+    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:inset-y-0 md:start-auto md:end-0 md:w-[440px] md:border-s md:border-line-soft">
       <div className="flex items-center justify-between border-b border-line-soft px-5 py-3">
         <button
           type="button"
           onClick={() => ws.patchTask(task.id, { planned_for: plannedToday ? null : now })}
           className={`rounded-full px-3 py-1 text-[13px] font-medium ${
-            plannedToday ? "bg-ink text-white" : "border border-line text-ink-2 hover:border-ink"
+            plannedToday ? "bg-accent text-white" : "bg-accent-soft text-accent"
           }`}
         >
           {plannedToday ? "On today" : "Add to today"}
         </button>
-        <button type="button" onClick={onClose} className="text-[15px] text-accent">
+        <button type="button" onClick={onClose} className="text-[16px] font-semibold text-accent">
           Done
         </button>
       </div>
@@ -80,7 +82,8 @@ export function TaskPanel({
             <Check
               done={task.done}
               onToggle={() => ws.patchTask(task.id, { done: !task.done })}
-              size={22}
+              color={color}
+              size={26}
             />
           </div>
           <textarea
@@ -91,7 +94,7 @@ export function TaskPanel({
             onKeyDown={(e) =>
               e.key === "Enter" && (e.preventDefault(), (e.target as HTMLTextAreaElement).blur())
             }
-            className="w-full resize-none bg-transparent text-[22px] font-medium leading-snug outline-none [field-sizing:content]"
+            className="w-full resize-none bg-transparent text-[26px] font-bold leading-tight tracking-[-0.02em] outline-none [field-sizing:content]"
             aria-label="Title"
           />
         </div>
@@ -150,14 +153,16 @@ export function TaskPanel({
 
         <div>
           <span className={label}>Priority</span>
-          <div className="mt-1.5 grid grid-cols-4 rounded-[8px] border border-line p-0.5">
+          <div className="mt-1.5 grid grid-cols-4 rounded-[10px] bg-ground p-0.5">
             {PRIORITY_LABEL.map((p, i) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => ws.patchTask(task.id, { priority: i as Task["priority"] })}
                 className={`rounded-[6px] py-1.5 text-[13px] font-medium ${
-                  task.priority === i ? "bg-ink text-white" : "text-ink-2 hover:bg-panel"
+                  task.priority === i
+                    ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
+                    : "text-ink-2"
                 }`}
               >
                 {p}
@@ -184,7 +189,8 @@ export function TaskPanel({
                 <Check
                   done={s.done}
                   onToggle={() => ws.patchTask(s.id, { done: !s.done })}
-                  size={18}
+                  color={color}
+                  size={20}
                 />
                 <span className={`flex-1 ${s.done ? "text-ink-3 line-through" : ""}`}>
                   {s.title}

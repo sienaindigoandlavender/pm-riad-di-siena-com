@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { PROJECT_COLORS } from "@/lib/colors";
 import type { Project, Task, TaskPatch } from "@/lib/types";
 
 async function send(url: string, method: string, body?: unknown) {
@@ -86,7 +87,7 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
       const project: Project = {
         id: crypto.randomUUID(),
         name,
-        color: "#111111",
+        color: PROJECT_COLORS[projects.length % PROJECT_COLORS.length]!,
         position: Date.now(),
         archived: false,
       };
@@ -94,13 +95,21 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
       send("/api/projects", "POST", project).catch(fail);
       return project;
     },
-    [fail],
+    [fail, projects.length],
   );
 
   const renameProject = useCallback(
     (id: string, name: string) => {
       setProjects((list) => list.map((p) => (p.id === id ? { ...p, name } : p)));
       send(`/api/projects/${id}`, "PATCH", { name }).catch(fail);
+    },
+    [fail],
+  );
+
+  const setProjectColor = useCallback(
+    (id: string, color: string) => {
+      setProjects((list) => list.map((p) => (p.id === id ? { ...p, color } : p)));
+      send(`/api/projects/${id}`, "PATCH", { color }).catch(fail);
     },
     [fail],
   );
@@ -123,6 +132,7 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
     deleteTask,
     createProject,
     renameProject,
+    setProjectColor,
     archiveProject,
   };
 }

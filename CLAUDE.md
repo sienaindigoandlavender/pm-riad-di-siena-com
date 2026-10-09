@@ -3,13 +3,16 @@
 Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mature version becomes a standalone app for all her projects, not only Riad di Siena. Not a SaaS.
 
 ## Design
-- Apple-sleek, almost clinical: Helvetica Neue, white, near-black ink, one blue (#0071e3), hairlines, no decoration.
+- Apple-sleek, almost clinical, but alive like Reminders: Helvetica Neue, white, black ink, hairlines, no decoration.
+- Colour carries meaning: each project wears an Apple system colour (its check rings, dot, title); smart lists (Today blue, Upcoming red, Inbox grey, Flagged orange) appear as tiles in the sidebar.
+- The view title is big, bold and in its list colour; Today shows a ring that fills as the day's tasks get done.
+- Sentence-case headings, no all-caps labels.
 - Legibility always: body 15px, meta 13px minimum, secondary text #424245 / #6e6e73, never paler.
 - Calm and fast: changes show instantly (optimistic) and save in the background.
 
 ## Now
 - No password while building.
-- Views: Today (plan the day, carry over from earlier, done today, up next), Inbox, Projects.
+- Views: Today (plan the day, carry over from earlier, up next, done today), Upcoming (by due date), Inbox, Flagged, Projects.
 - Task: title, project, due date, priority (none/low/medium/high), notes, subtasks, "on today".
 
 ## Later
