@@ -92,7 +92,7 @@ export function Workspace({
             <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
               <path
                 d="M4 7h16M4 12h16M4 17h16"
-                stroke="#007AFF"
+                stroke="#4A6B85"
                 strokeWidth="1.8"
                 strokeLinecap="round"
               />
@@ -215,7 +215,7 @@ function Ring({ done, total, color }: { done: number; total: number; color: stri
         <p className="mt-1 text-[13px] text-ink-3">{done === total ? "All done" : "done"}</p>
       </div>
       <svg width="56" height="56" viewBox="0 0 56 56" aria-hidden className="-rotate-90">
-        <circle cx="28" cy="28" r={r} fill="none" stroke="#E5E5EA" strokeWidth="6" />
+        <circle cx="28" cy="28" r={r} fill="none" stroke="#E9E7E2" strokeWidth="6" />
         <circle
           cx="28"
           cy="28"

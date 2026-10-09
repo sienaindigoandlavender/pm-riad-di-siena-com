@@ -4,7 +4,7 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 
 ## Design
 - Apple-sleek, almost clinical, but alive like Reminders: Helvetica Neue, white, black ink, hairlines, no decoration.
-- Colour carries meaning: each project wears an Apple system colour (its check rings, dot, title); smart lists (Today blue, Upcoming red, Inbox grey, Flagged orange) appear as tiles in the sidebar.
+- Earth colours, Sunsama-soft (no rituals): slate, sage, clay, ochre, plum, teal, olive, dusty rose, walnut, stone blue. Each project wears one (check rings, dot, title); smart lists (Today slate, Upcoming clay, Inbox stone, Flagged ochre) are tiles in the sidebar. Warm off-white ground (#f5f4f1), slate accent (#4a6b85). No bright Apple orange or blue.
 - The view title is big, bold and in its list colour; Today shows a ring that fills as the day's tasks get done.
 - Sentence-case headings, no all-caps labels.
 - Legibility always: body 15px, meta 13px minimum, secondary text #424245 / #6e6e73, never paler.

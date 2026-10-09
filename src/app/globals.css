@@ -3,16 +3,16 @@
 /* Clinical: white, near-black, one blue. Hairlines, no shadows except the panel edge. */
 :root {
   --bg: #ffffff;
-  --ground: #f2f2f7;
-  --panel: #f2f2f7;
-  --ink: #000000;
-  --ink-2: #3c3c43;
-  --ink-3: #6c6c70;
-  --line: #c6c6c8;
-  --line-soft: #e5e5ea;
-  --accent: #007aff;
-  --accent-soft: #e5f1ff;
-  --danger: #ff3b30;
+  --ground: #f5f4f1;
+  --panel: #f5f4f1;
+  --ink: #1c1b19;
+  --ink-2: #45423d;
+  --ink-3: #6f6a62;
+  --line: #d6d3cc;
+  --line-soft: #e9e7e2;
+  --accent: #4a6b85;
+  --accent-soft: #e8eef3;
+  --danger: #b5533c;
   --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 

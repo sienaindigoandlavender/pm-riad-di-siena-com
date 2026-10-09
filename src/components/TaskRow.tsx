@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { shortDate, today } from "@/lib/dates";
+import { FLAG_COLORS } from "@/lib/colors";
 import type { Project, Task } from "@/lib/types";
 
 /** Reminders-style check: a ring in the project's colour that fills when done. */
 export function Check({
   done,
   onToggle,
-  color = "#007AFF",
+  color = "#4A6B85",
   size = 22,
 }: {
   done: boolean;
@@ -33,7 +34,7 @@ export function Check({
       style={{
         width: size,
         height: size,
-        border: `1.75px solid ${done ? color : "#C7C7CC"}`,
+        border: `1.75px solid ${done ? color : "#C9C5BD"}`,
         background: done ? color : "transparent",
       }}
     >
@@ -55,7 +56,7 @@ export function Check({
 
 export function Flag({ level }: { level: number }) {
   if (!level) return null;
-  const color = level === 3 ? "#FF3B30" : level === 2 ? "#FF9500" : "#FFCC00";
+  const color = FLAG_COLORS[level] ?? FLAG_COLORS[1];
   return (
     <svg
       viewBox="0 0 16 16"
