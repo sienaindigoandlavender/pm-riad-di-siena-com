@@ -1,34 +1,46 @@
-// Earth colours, Sunsama-soft. Each project wears one; white text and ticks stay legible on all.
+// A happy pastel-bright box of crayons. Each project wears one; white ticks stay legible on all.
 export const PROJECT_COLORS = [
-  "#5E7891", // slate
-  "#7A9A7E", // sage
-  "#B5654A", // clay
-  "#C29A4A", // ochre
-  "#8A6A88", // plum
-  "#4F7C7A", // teal earth
-  "#7F8452", // olive
-  "#B07C7C", // dusty rose
-  "#8C7B66", // walnut
-  "#6E7B8B", // stone blue
+  "#E26D8E", // berry
+  "#F2994A", // tangerine
+  "#E0AE1F", // sunflower
+  "#4CB59A", // mint
+  "#5AA9E6", // sky
+  "#9B7FD9", // lavender
+  "#EF7B6C", // coral
+  "#7DBB5A", // leaf
+  "#3FA7A5", // teal
+  "#D97BBF", // rose
 ] as const;
 
-// Projects created with the earlier Apple palette move to their earth twin.
+// Projects created with earlier palettes move to their cheerful twin.
 const LEGACY: Record<string, string> = {
-  "#007aff": "#5E7891",
-  "#ff9500": "#C29A4A",
-  "#34c759": "#7A9A7E",
-  "#af52de": "#8A6A88",
-  "#ff2d55": "#B07C7C",
-  "#5ac8fa": "#4F7C7A",
-  "#ff3b30": "#B5654A",
-  "#5856d6": "#6E7B8B",
-  "#ffcc00": "#C29A4A",
-  "#a2845e": "#8C7B66",
+  // Apple
+  "#007aff": "#5AA9E6",
+  "#ff9500": "#F2994A",
+  "#34c759": "#7DBB5A",
+  "#af52de": "#9B7FD9",
+  "#ff2d55": "#E26D8E",
+  "#5ac8fa": "#3FA7A5",
+  "#ff3b30": "#EF7B6C",
+  "#5856d6": "#9B7FD9",
+  "#ffcc00": "#E0AE1F",
+  "#a2845e": "#F2994A",
+  // earth
+  "#5e7891": "#5AA9E6",
+  "#7a9a7e": "#4CB59A",
+  "#b5654a": "#EF7B6C",
+  "#c29a4a": "#E0AE1F",
+  "#8a6a88": "#9B7FD9",
+  "#4f7c7a": "#3FA7A5",
+  "#7f8452": "#7DBB5A",
+  "#b07c7c": "#E26D8E",
+  "#8c7b66": "#F2994A",
+  "#6e7b8b": "#D97BBF",
 };
 
-/** A project's colour; older projects get their earth twin or a stable colour from their id. */
+/** A project's colour; older projects get their twin or a stable colour from their id. */
 export function projectColor(p: { id: string; color: string } | undefined): string {
-  if (!p) return "#8C8478";
+  if (!p) return "#4CB59A";
   const c = (p.color || "").toLowerCase();
   if (LEGACY[c]) return LEGACY[c];
   if (c && c !== "#111111") return p.color;
@@ -38,10 +50,10 @@ export function projectColor(p: { id: string; color: string } | undefined): stri
 }
 
 export const SMART = {
-  today: "#4A6B85",
-  upcoming: "#B5654A",
-  inbox: "#8C8478",
-  flagged: "#B8914A",
+  today: "#8E7CE0",
+  upcoming: "#EF7B6C",
+  inbox: "#4CB59A",
+  flagged: "#E0AE1F",
 } as const;
 
-export const FLAG_COLORS = ["", "#CDB27A", "#C29A4A", "#B5533C"] as const;
+export const FLAG_COLORS = ["", "#E0AE1F", "#F2994A", "#E26D8E"] as const;

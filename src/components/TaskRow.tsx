@@ -5,11 +5,11 @@ import { shortDate, today } from "@/lib/dates";
 import { FLAG_COLORS } from "@/lib/colors";
 import type { Project, Task } from "@/lib/types";
 
-/** Reminders-style check: a ring in the project's colour that fills when done. */
+/** A round check in the project's colour. Finishing a task makes it pop and sparkle. */
 export function Check({
   done,
   onToggle,
-  color = "#4A6B85",
+  color = "#8E7CE0",
   size = 22,
 }: {
   done: boolean;
@@ -18,41 +18,65 @@ export function Check({
   size?: number;
 }) {
   const [pop, setPop] = useState(false);
+  const [burst, setBurst] = useState(0);
   return (
-    <button
-      type="button"
-      role="checkbox"
-      aria-checked={done}
-      aria-label={done ? "Mark as not done" : "Mark as done"}
-      onClick={(e) => {
-        e.stopPropagation();
-        setPop(true);
-        onToggle();
-      }}
-      onAnimationEnd={() => setPop(false)}
-      className={`flex shrink-0 items-center justify-center rounded-full transition-colors ${pop ? "pm-pop" : ""}`}
-      style={{
-        width: size,
-        height: size,
-        border: `1.75px solid ${done ? color : "#C9C5BD"}`,
-        background: done ? color : "transparent",
-      }}
-    >
-      {done ? (
-        <svg viewBox="0 0 12 12" width={size * 0.55} height={size * 0.55} aria-hidden>
-          <path
-            d="M2.5 6.2 5 8.5 9.5 3.5"
-            fill="none"
-            stroke="#fff"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={done}
+        aria-label={done ? "Mark as not done" : "Mark as done"}
+        onClick={(e) => {
+          e.stopPropagation();
+          setPop(true);
+          if (!done) setBurst((b) => b + 1);
+          onToggle();
+        }}
+        onAnimationEnd={() => setPop(false)}
+        className={`flex shrink-0 items-center justify-center rounded-full transition-colors ${pop ? "pm-pop" : ""}`}
+        style={{
+          width: size,
+          height: size,
+          border: `2.5px solid ${color}`,
+          background: done ? color : "#fff",
+        }}
+      >
+        {done ? (
+          <svg viewBox="0 0 12 12" width={size * 0.55} height={size * 0.55} aria-hidden>
+            <path
+              d="M2.5 6.2 5 8.5 9.5 3.5"
+              fill="none"
+              stroke="#fff"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : null}
+      </button>
+      {burst ? (
+        <span key={burst} className="pointer-events-none absolute inset-0" aria-hidden>
+          {SPARKS.map(([dx, dy, c], i) => (
+            <span
+              key={i}
+              className="pm-spark absolute start-1/2 top-1/2 -ms-1 -mt-1 size-2 rounded-full"
+              style={{ background: c, "--dx": `${dx}px`, "--dy": `${dy}px` } as React.CSSProperties}
+            />
+          ))}
+        </span>
       ) : null}
-    </button>
+    </span>
   );
 }
+
+const SPARKS: [number, number, string][] = [
+  [0, -22, "#E0AE1F"],
+  [19, -11, "#E26D8E"],
+  [19, 11, "#5AA9E6"],
+  [0, 22, "#7DBB5A"],
+  [-19, 11, "#9B7FD9"],
+  [-19, -11, "#F2994A"],
+];
 
 export function Flag({ level }: { level: number }) {
   if (!level) return null;
@@ -101,17 +125,20 @@ export function TaskRow({
   return (
     <li
       onClick={onOpen}
-      className={`group relative flex cursor-default items-start gap-3.5 ps-4 pe-3 transition-colors ${
-        selected ? "bg-accent-soft" : "hover:bg-ground/70"
+      className={`pm-in group relative mx-1.5 flex cursor-default items-start gap-3.5 rounded-[20px] ps-3 pe-3 transition-colors ${
+        selected ? "bg-accent-soft" : "hover:bg-ground"
       }`}
     >
       <div className="py-3">
         <Check done={task.done} onToggle={onToggle} color={color} />
       </div>
-      <div className="min-w-0 flex-1 border-b border-line-soft py-3 pe-1 group-last:border-b-0">
+      <div className="min-w-0 flex-1 py-3 pe-1">
         <div className="flex items-center gap-2">
           <Flag level={task.done ? 0 : task.priority} />
-          <p className={`truncate text-[16px] ${task.done ? "text-ink-3" : "text-ink"}`}>
+          <p
+            className={`truncate text-[16px] font-medium ${task.done ? "text-ink-3 line-through decoration-2" : "text-ink"}`}
+            style={task.done ? { textDecorationColor: color } : undefined}
+          >
             {task.title}
           </p>
           {action ? (
@@ -123,13 +150,17 @@ export function TaskRow({
         {hasMeta ? (
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-3">
             {showProject && project ? (
-              <span className="flex items-center gap-1.5">
-                <span className="size-2" style={{ background: color }} />
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="size-2.5 rounded-full" style={{ background: color }} />
                 {project.name}
               </span>
             ) : null}
             {task.due_date ? (
-              <span className={overdue ? "font-medium text-danger" : undefined}>
+              <span
+                className={
+                  overdue ? "rounded-full bg-[#fde4ea] px-2 font-semibold text-danger" : undefined
+                }
+              >
                 {shortDate(task.due_date, now)}
               </span>
             ) : null}

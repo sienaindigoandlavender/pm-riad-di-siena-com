@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { PROJECT_COLORS, SMART, projectColor } from "@/lib/colors";
 import { longDate, marrakechHour, shortDate, today } from "@/lib/dates";
 import type { Project, Task } from "@/lib/types";
-import { HeroScene } from "./HeroScene";
+import { HeroScene, tint } from "./HeroScene";
+import { Hoopoe } from "./Hoopoe";
 import { TaskPanel } from "./TaskPanel";
 import { TaskRow } from "./TaskRow";
 import { useWorkspace, type WorkspaceApi } from "./useWorkspace";
@@ -82,8 +83,8 @@ export function Workspace({
     <div className="flex min-h-dvh">
       <Sidebar ws={ws} view={view} open={menu} onClose={() => setMenu(false)} />
 
-      <main className={`min-w-0 flex-1 bg-white ${open ? "md:me-[440px]" : ""}`}>
-        <div className="sticky top-0 z-10 flex items-center border-b border-line-soft bg-white px-4 py-2.5 md:hidden">
+      <main className={`min-w-0 flex-1 bg-bg ${open ? "md:me-[440px]" : ""}`}>
+        <div className="sticky top-0 z-10 flex items-center bg-bg px-4 py-2.5 md:hidden">
           <button
             type="button"
             className="p-1"
@@ -93,21 +94,22 @@ export function Workspace({
             <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
               <path
                 d="M4 7h16M4 12h16M4 17h16"
-                stroke="#4A6B85"
-                strokeWidth="1.8"
+                stroke="#2B2238"
+                strokeWidth="2.4"
                 strokeLinecap="round"
               />
             </svg>
           </button>
         </div>
 
-        <div className="mx-auto max-w-[760px] px-0 pb-28 pt-0 md:px-10 md:pt-8">
+        <div className="mx-auto max-w-[760px] px-3 pb-28 pt-1 md:px-10 md:pt-8">
           <Heading
             view={view}
             title={heading.title}
             color={heading.color}
             ws={ws}
             topLevel={topLevel}
+            colorOf={colorOf}
           />
 
           {setupNeeded ? (
@@ -160,21 +162,24 @@ export function Workspace({
   );
 }
 
-/** The hero: a block of the list's colour with the title set large in white. On Today, a ring fills as tasks get done. */
+/** The garden at the top: pastel sky, Hudhud, and a flower for every task finished today. */
 function Heading({
   view,
   title,
   color,
   topLevel,
+  colorOf,
 }: {
   view: View;
   title: string;
   color: string;
   ws: WorkspaceApi;
   topLevel: Task[];
+  colorOf: (t: Task) => string;
 }) {
   const now = today();
   const open = topLevel.filter((t) => !t.done);
+  const doneToday = topLevel.filter((t) => t.done && t.done_at && t.done_at.slice(0, 10) === now);
   let ring: { done: number; total: number } | null = null;
   let stats: { n: number; label: string }[] = [];
   if (view.kind === "today") {
@@ -195,6 +200,7 @@ function Heading({
     stats = [
       { n: ring.total - ring.done, label: "to go" },
       ...(late ? [{ n: late, label: "from earlier" }] : []),
+      ...(doneToday.length ? [{ n: doneToday.length, label: "bloomed today" }] : []),
     ];
   } else if (view.kind === "project") {
     const mine = topLevel.filter((t) => t.project_id === view.id);
@@ -213,63 +219,77 @@ function Heading({
   } else {
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
+  const allDone = !!ring && ring.total > 0 && ring.done === ring.total;
+  const hour = marrakechHour();
+  const night = hour >= 19 || hour < 6;
+  const flowers = (
+    view.kind === "project" ? doneToday.filter((t) => t.project_id === view.id) : doneToday
+  ).map(colorOf);
   return (
-    <header className="relative mb-8 h-[280px] overflow-hidden text-white md:h-[320px]">
-      <HeroScene
-        sky={color}
-        hour={marrakechHour()}
-        allDone={!!ring && ring.total > 0 && ring.done === ring.total}
-      />
-      <div className="relative flex items-start justify-between gap-4 px-6 pt-6 md:px-8 md:pt-8">
-        <div className="min-w-0">
-          <p className="text-[15px] font-medium text-white/85">
-            {view.kind === "today" ? longDate(now) : "\u00a0"}
-          </p>
-          <h1 className="truncate text-[52px] font-bold leading-[1] tracking-[-0.035em] md:text-[72px]">
-            {title}
-          </h1>
+    <>
+      <header
+        className={`relative mb-4 h-[290px] overflow-hidden rounded-[32px] md:h-[330px] ${
+          night ? "text-white" : "text-ink"
+        }`}
+      >
+        <HeroScene sky={color} hour={hour} mood={allDone ? "cheer" : "hello"} flowers={flowers} />
+        <div className="relative flex items-start justify-between gap-4 px-6 pt-6 md:px-8 md:pt-7">
+          <div className="min-w-0">
+            <p className={`text-[15px] font-semibold ${night ? "text-white/85" : "text-ink-2"}`}>
+              {view.kind === "today" ? longDate(now) : "\u00a0"}
+            </p>
+            <h1 className="truncate font-display text-[54px] font-semibold leading-[1.02] tracking-[-0.01em] md:text-[76px]">
+              {title}
+            </h1>
+            {allDone ? (
+              <p className="pm-in mt-1 font-display text-[19px] font-medium">
+                All done! Hudhud is dancing.
+              </p>
+            ) : null}
+          </div>
+          {ring && ring.total > 0 ? <Ring {...ring} color={color} /> : null}
         </div>
-        {ring && ring.total > 0 ? <Ring {...ring} /> : null}
-      </div>
-      <div className="absolute bottom-5 start-6 flex flex-wrap gap-2 md:start-8">
+      </header>
+      <div className="mb-6 flex flex-wrap gap-2 px-1">
         {stats.map((st) => (
           <span
             key={st.label}
-            className="bg-black/30 px-2.5 py-1 text-[14px] font-medium tabular-nums text-white"
+            className="rounded-full px-3 py-1 text-[14px] font-semibold tabular-nums text-ink"
+            style={{ background: tint(color, 0.8) }}
           >
             {st.n} {st.label}
           </span>
         ))}
       </div>
-    </header>
+    </>
   );
 }
 
-function Ring({ done, total }: { done: number; total: number }) {
+function Ring({ done, total, color }: { done: number; total: number; color: string }) {
   const r = 34;
   const c = 2 * Math.PI * r;
   const pct = total ? done / total : 0;
   return (
-    <div className="relative shrink-0">
-      <svg width="88" height="88" viewBox="0 0 88 88" aria-hidden className="-rotate-90">
-        <circle cx="44" cy="44" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="9" />
+    <div className="relative shrink-0 rounded-full bg-white">
+      <svg width="92" height="92" viewBox="0 0 92 92" aria-hidden className="-rotate-90">
+        <circle cx="46" cy="46" r={r} fill="none" stroke={tint(color, 0.75)} strokeWidth="10" />
         <circle
-          cx="44"
-          cy="44"
+          cx="46"
+          cy="46"
           r={r}
           fill="none"
-          stroke="#fff"
-          strokeWidth="9"
+          stroke={color}
+          strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.22,1,0.36,1)" }}
+          style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.34,1.56,0.64,1)" }}
         />
       </svg>
-      <p className="absolute inset-0 flex flex-col items-center justify-center text-[20px] font-bold leading-none tabular-nums">
+      <p className="absolute inset-0 flex flex-col items-center justify-center font-display text-[22px] font-semibold leading-none tabular-nums text-ink">
         {done}/{total}
-        <span className="mt-1 text-[11px] font-medium text-white/80">
-          {done === total ? "all done" : "done"}
+        <span className="mt-1 font-sans text-[11px] font-semibold text-ink-2">
+          {done === total ? "yay!" : "done"}
         </span>
       </p>
     </div>
@@ -278,7 +298,7 @@ function Ring({ done, total }: { done: number; total: number }) {
 
 function Notice({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
   return (
-    <div className="mx-4 mb-5 flex items-start justify-between gap-4 border-s-4 border-ink bg-ground px-4 py-3 text-[15px] text-ink-2">
+    <div className="mb-5 flex items-start justify-between gap-4 rounded-3xl bg-ground px-5 py-3.5 text-[15px] text-ink-2">
       <p>{children}</p>
       {onClose ? (
         <button type="button" onClick={onClose} className="font-medium text-accent">
@@ -301,19 +321,23 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-10 first:mt-0">
+    <section className="mt-8 first:mt-0">
       {title ? (
-        <div className="flex items-baseline justify-between border-b-2 border-ink px-4 pb-2">
-          <h2 className="text-[20px] font-bold tracking-[-0.015em]">
+        <div className="flex items-center justify-between px-3 pb-2.5">
+          <h2 className="font-display text-[22px] font-semibold">
             {title}
             {count !== undefined ? (
-              <span className="ms-2 font-semibold text-ink-3">{count}</span>
+              <span className="ms-2 inline-flex min-w-7 items-center justify-center rounded-full bg-ground px-2 align-[3px] font-sans text-[13px] font-bold text-ink-2">
+                {count}
+              </span>
             ) : null}
           </h2>
           {action}
         </div>
       ) : null}
-      <ul>{children}</ul>
+      <ul className="overflow-hidden rounded-[26px] bg-white py-1.5 shadow-[0_2px_0_#f0e4d6]">
+        {children}
+      </ul>
     </section>
   );
 }
@@ -337,11 +361,11 @@ function QuickAdd({
         onAdd(t);
         setValue("");
       }}
-      className="mb-6 flex items-center gap-3.5 border-b-2 px-4 py-3"
-      style={{ borderColor: color }}
+      className="mb-6 flex items-center gap-3 rounded-full border-[2.5px] bg-white py-2 ps-2 pe-5 transition-transform focus-within:scale-[1.01]"
+      style={{ borderColor: tint(color, 0.45) }}
     >
       <span
-        className="flex size-[22px] shrink-0 items-center justify-center text-[18px] font-medium leading-none text-white"
+        className="flex size-9 shrink-0 items-center justify-center rounded-full text-[24px] font-semibold leading-none text-white"
         style={{ background: color }}
         aria-hidden
       >
@@ -357,8 +381,17 @@ function QuickAdd({
   );
 }
 
-const Empty = ({ children }: { children: React.ReactNode }) => (
-  <li className="px-4 py-8 text-[15px] text-ink-3">{children}</li>
+const Empty = ({
+  children,
+  mood = "sit",
+}: {
+  children: React.ReactNode;
+  mood?: "sit" | "cheer" | "hello" | "sleep";
+}) => (
+  <li className="flex items-center gap-3 px-4 py-4 text-[15px] text-ink-2">
+    <Hoopoe mood={mood} size={64} className="hh-bob shrink-0" />
+    <span>{children}</span>
+  </li>
 );
 
 function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; row: RowFn }) {
@@ -378,7 +411,7 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
     <button
       type="button"
       onClick={() => plan(t)}
-      className="whitespace-nowrap bg-accent-soft px-3 py-1 text-[13px] font-medium text-accent md:opacity-0 md:group-hover:opacity-100"
+      className="whitespace-nowrap rounded-full bg-accent-soft px-3 py-1 text-[13px] font-semibold text-accent transition-transform hover:scale-105 md:opacity-0 md:group-hover:opacity-100"
     >
       Do today
     </button>
@@ -395,9 +428,9 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
         {todayOpen.length ? (
           todayOpen.map((t) => row(t))
         ) : (
-          <Empty>
+          <Empty mood={doneToday.length ? "cheer" : "sit"}>
             {doneToday.length
-              ? "Everything planned for today is done."
+              ? "Everything planned for today is done. Look at your garden!"
               : "Nothing planned. Add a task above, or pick one from below."}
           </Empty>
         )}
@@ -411,7 +444,7 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
             <button
               type="button"
               onClick={() => earlier.forEach(plan)}
-              className="text-[15px] text-accent"
+              className="rounded-full px-2 text-[15px] font-semibold text-accent"
             >
               Move all to today
             </button>
@@ -516,7 +549,7 @@ function ListView({
             <button
               type="button"
               onClick={() => setShowDone((v) => !v)}
-              className="text-[15px] text-accent"
+              className="rounded-full px-2 text-[15px] font-semibold text-accent"
             >
               {showDone ? "Hide" : "Show"}
             </button>
@@ -534,7 +567,7 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
   const [confirm, setConfirm] = useState(false);
   const current = projectColor(project);
   return (
-    <div className="mx-4 mt-16 flex flex-col gap-4 border-t border-line pt-5">
+    <div className="mt-12 flex flex-col gap-4 rounded-[26px] bg-ground p-5">
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={name}
@@ -542,10 +575,10 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
           onBlur={() =>
             name.trim() && name.trim() !== project.name && ws.renameProject(project.id, name.trim())
           }
-          className="border-b-2 border-line bg-transparent px-1 py-2 text-[15px] outline-none focus:border-ink"
+          className="rounded-full bg-white px-4 py-2 text-[15px] outline-none"
           aria-label="Project name"
         />
-        <div className="flex gap-2" role="radiogroup" aria-label="Project colour">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Project colour">
           {PROJECT_COLORS.map((c) => (
             <button
               key={c}
@@ -554,7 +587,7 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
               aria-checked={current === c}
               aria-label={c}
               onClick={() => ws.setProjectColor(project.id, c)}
-              className="size-6"
+              className="size-7 rounded-full transition-transform hover:scale-110"
               style={{
                 background: c,
                 boxShadow: current === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : undefined,
@@ -677,16 +710,23 @@ function Sidebar({
         href={href}
         onClick={onClose}
         aria-current={active ? "page" : undefined}
-        className={`flex flex-col gap-3 p-3 text-white ${
-          active ? "shadow-[inset_0_-5px_0_#1c1b19]" : ""
+        className={`flex flex-col gap-3 rounded-[22px] p-3 transition-transform hover:-translate-y-0.5 ${
+          active ? "text-white" : "text-ink"
         }`}
-        style={{ background: SMART[kind] }}
+        style={{ background: active ? SMART[kind] : tint(SMART[kind], 0.78) }}
       >
         <span className="flex items-start justify-between">
-          <span className="flex size-8 items-center justify-center bg-white/25">{ICONS[kind]}</span>
-          <span className="text-[26px] font-bold leading-none tabular-nums">{counts[kind]}</span>
+          <span
+            className="flex size-8 items-center justify-center rounded-full"
+            style={{ background: active ? "rgba(255,255,255,0.3)" : SMART[kind] }}
+          >
+            {ICONS[kind]}
+          </span>
+          <span className="font-display text-[28px] font-semibold leading-none tabular-nums">
+            {counts[kind]}
+          </span>
         </span>
-        <span className="text-[15px] font-semibold">{label}</span>
+        <span className="text-[15px] font-bold">{label}</span>
       </Link>
     );
   };
@@ -695,10 +735,14 @@ function Sidebar({
     <>
       {open ? <div className="fixed inset-0 z-30 bg-black/25 md:hidden" onClick={onClose} /> : null}
       <nav
-        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto border-e border-line bg-ground px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
+        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto bg-ground px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
           open ? "flex" : "hidden"
         }`}
       >
+        <div className="flex items-center gap-2 px-1">
+          <Hoopoe mood="hello" size={44} />
+          <span className="font-display text-[24px] font-semibold">Hudhud</span>
+        </div>
         <div className="grid grid-cols-2 gap-2.5">
           {tile("today", "/", "Today")}
           {tile("upcoming", "/upcoming", "Upcoming")}
@@ -707,7 +751,7 @@ function Sidebar({
         </div>
 
         <div>
-          <p className="px-2 pb-1.5 text-[19px] font-bold tracking-[-0.01em]">Projects</p>
+          <p className="px-2 pb-1.5 font-display text-[21px] font-semibold">Projects</p>
           <div className="flex flex-col">
             {ws.projects.map((p) => {
               const active = view.kind === "project" && view.id === p.id;
@@ -718,12 +762,12 @@ function Sidebar({
                   key={p.id}
                   href={`/p/${p.id}`}
                   onClick={onClose}
-                  className={`flex items-center gap-3 px-2 py-2 ${
+                  className={`flex items-center gap-3 rounded-full px-2 py-1.5 ${
                     active ? "bg-white" : "hover:bg-white/60"
                   }`}
                 >
                   <span
-                    className="flex size-7 shrink-0 items-center justify-center"
+                    className="flex size-7 shrink-0 items-center justify-center rounded-full"
                     style={{ background: color }}
                   >
                     <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
@@ -741,7 +785,14 @@ function Sidebar({
                   <span className={`flex-1 truncate text-[15px] ${active ? "font-semibold" : ""}`}>
                     {p.name}
                   </span>
-                  {n ? <span className="text-[15px] text-ink-3 tabular-nums">{n}</span> : null}
+                  {n ? (
+                    <span
+                      className="me-1 min-w-6 rounded-full px-1.5 text-center text-[13px] font-bold tabular-nums"
+                      style={{ background: tint(color, 0.8), color: "#2B2238" }}
+                    >
+                      {n}
+                    </span>
+                  ) : null}
                 </Link>
               );
             })}
@@ -763,14 +814,14 @@ function Sidebar({
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => !name.trim() && setAdding(false)}
                 placeholder="Project name"
-                className="w-full border-b-2 border-ink bg-transparent px-2 py-2 text-[15px] outline-none"
+                className="w-full rounded-full bg-white px-4 py-2 text-[15px] outline-none"
               />
             </form>
           ) : (
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="mt-1 flex items-center gap-2 px-2 py-2 text-[15px] font-medium text-accent"
+              className="mt-1 flex items-center gap-2 px-2 py-2 text-[15px] font-semibold text-accent"
             >
               <span className="text-[20px] leading-none">+</span> Add project
             </button>

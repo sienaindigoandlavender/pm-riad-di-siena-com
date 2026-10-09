@@ -1,19 +1,20 @@
 @import "tailwindcss";
 
-/* Clinical: white, near-black, one blue. Hairlines, no shadows except the panel edge. */
+/* Cute and joyful: a creamy page, plum ink, pastel-bright colours, round friendly shapes. */
 :root {
-  --bg: #ffffff;
-  --ground: #f5f4f1;
-  --panel: #f5f4f1;
-  --ink: #1c1b19;
-  --ink-2: #45423d;
-  --ink-3: #6f6a62;
-  --line: #d6d3cc;
-  --line-soft: #e9e7e2;
-  --accent: #4a6b85;
-  --accent-soft: #e8eef3;
-  --danger: #b5533c;
-  --font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --bg: #fffaf3;
+  --ground: #fdf1e4;
+  --panel: #ffffff;
+  --ink: #2b2238;
+  --ink-2: #4a4058;
+  --ink-3: #6e647c;
+  --line: #eadfd2;
+  --line-soft: #f3eadf;
+  --accent: #7a64d6;
+  --accent-soft: #efeafc;
+  --danger: #d4506c;
+  --font: "DM Sans Variable", "DM Sans", system-ui, sans-serif;
+  --font-display: "Fredoka Variable", "Fredoka", "DM Sans Variable", system-ui, sans-serif;
 }
 
 @theme inline {
@@ -29,6 +30,7 @@
   --color-accent-soft: var(--accent-soft);
   --color-danger: var(--danger);
   --font-sans: var(--font);
+  --font-display: var(--font-display);
 }
 
 @layer base {
@@ -47,8 +49,9 @@
     background: var(--accent-soft);
   }
   *:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 3px solid var(--accent);
     outline-offset: 2px;
+    border-radius: 12px;
   }
   input,
   textarea,
@@ -62,7 +65,7 @@
 @keyframes pm-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -73,19 +76,22 @@
   0% {
     transform: scale(1);
   }
-  40% {
-    transform: scale(1.18);
+  35% {
+    transform: scale(1.3) rotate(-8deg);
+  }
+  70% {
+    transform: scale(0.92) rotate(4deg);
   }
   100% {
     transform: scale(1);
   }
 }
 .pm-pop {
-  animation: pm-pop 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pm-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes pm-panel {
   from {
-    transform: translateX(16px);
+    transform: translateX(24px);
     opacity: 0;
   }
   to {
@@ -94,11 +100,100 @@
   }
 }
 .pm-in {
-  animation: pm-in 180ms ease-out both;
+  animation: pm-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 .pm-panel {
-  animation: pm-panel 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pm-panel 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* sparkles that burst from a check */
+@keyframes pm-spark {
+  0% {
+    transform: translate(0, 0) scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(1);
+    opacity: 0;
+  }
+}
+.pm-spark {
+  animation: pm-spark 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* the garden */
+@keyframes hh-wiggle {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+}
+.hh-wiggle {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: hh-wiggle 0.9s ease-in-out infinite;
+}
+@keyframes hh-grow {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.hh-grow {
+  animation: hh-grow 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+@keyframes hh-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.hh-twinkle {
+  animation: hh-twinkle 2.4s ease-in-out infinite;
+}
+@keyframes hh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.hh-spin {
+  animation: hh-spin 40s linear infinite;
+}
+@keyframes hh-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(18px);
+  }
+}
+.hh-drift {
+  animation: hh-drift 9s ease-in-out infinite;
+}
+@keyframes hh-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.hh-bob {
+  animation: hh-bob 3s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { addDays, today } from "@/lib/dates";
 import { PRIORITY_LABEL, type Task } from "@/lib/types";
+import { FLAG_COLORS } from "@/lib/colors";
 import { Check } from "./TaskRow";
 import type { WorkspaceApi } from "./useWorkspace";
 
-const label = "block text-[13px] font-semibold text-ink-2";
+const label = "block font-display text-[15px] font-semibold text-ink-2";
 const field =
-  "w-full border-b-2 border-line bg-transparent px-1 py-2.5 text-[15px] outline-none focus:border-ink";
+  "w-full rounded-2xl border-2 border-transparent bg-ground px-3 py-2.5 text-[15px] outline-none focus:border-accent";
 
 /** Everything about one task. Changes save as you go. */
 export function TaskPanel({
@@ -60,18 +61,22 @@ export function TaskPanel({
   const plannedToday = task.planned_for === now;
 
   return (
-    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:border-s-2 md:border-ink md:inset-y-0 md:start-auto md:end-0 md:w-[440px] ">
-      <div className="flex items-center justify-between border-b border-line-soft px-5 py-3">
+    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:inset-y-3 md:start-auto md:end-3 md:w-[440px] md:rounded-[32px] md:shadow-[0_10px_40px_rgba(43,34,56,0.14)]">
+      <div className="flex items-center justify-between px-5 pt-4 pb-1">
         <button
           type="button"
           onClick={() => ws.patchTask(task.id, { planned_for: plannedToday ? null : now })}
-          className={`px-3 py-1 text-[13px] font-medium ${
+          className={`rounded-full px-3.5 py-1.5 text-[14px] font-semibold transition-transform hover:scale-105 ${
             plannedToday ? "bg-accent text-white" : "bg-accent-soft text-accent"
           }`}
         >
-          {plannedToday ? "On today" : "Add to today"}
+          {plannedToday ? "☀ On today" : "Add to today"}
         </button>
-        <button type="button" onClick={onClose} className="text-[16px] font-semibold text-accent">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full bg-ink px-4 py-1.5 text-[15px] font-semibold text-white"
+        >
           Done
         </button>
       </div>
@@ -94,7 +99,7 @@ export function TaskPanel({
             onKeyDown={(e) =>
               e.key === "Enter" && (e.preventDefault(), (e.target as HTMLTextAreaElement).blur())
             }
-            className="w-full resize-none bg-transparent text-[26px] font-bold leading-tight tracking-[-0.02em] outline-none [field-sizing:content]"
+            className="w-full resize-none bg-transparent font-display text-[28px] font-semibold leading-tight outline-none [field-sizing:content]"
             aria-label="Title"
           />
         </div>
@@ -123,17 +128,17 @@ export function TaskPanel({
               onChange={(e) => ws.patchTask(task.id, { due_date: e.target.value || null })}
               className={`${field} mt-1.5`}
             />
-            <div className="mt-1.5 flex gap-3 text-[13px]">
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[13px]">
               <button
                 type="button"
-                className="text-accent"
+                className="rounded-full bg-accent-soft px-2.5 py-0.5 font-semibold text-accent"
                 onClick={() => ws.patchTask(task.id, { due_date: now })}
               >
                 Today
               </button>
               <button
                 type="button"
-                className="text-accent"
+                className="rounded-full bg-accent-soft px-2.5 py-0.5 font-semibold text-accent"
                 onClick={() => ws.patchTask(task.id, { due_date: addDays(now, 1) })}
               >
                 Tomorrow
@@ -153,15 +158,18 @@ export function TaskPanel({
 
         <div>
           <span className={label}>Priority</span>
-          <div className="mt-1.5 grid grid-cols-4 border-2 border-ink">
+          <div className="mt-1.5 grid grid-cols-4 gap-1 rounded-full bg-ground p-1">
             {PRIORITY_LABEL.map((p, i) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => ws.patchTask(task.id, { priority: i as Task["priority"] })}
-                className={`py-1.5 text-[13px] font-medium ${
-                  task.priority === i ? "bg-ink text-white" : "text-ink-2"
+                className={`rounded-full py-1.5 text-[13px] font-semibold transition-colors ${
+                  task.priority === i ? "text-white" : "text-ink-2 hover:bg-white"
                 }`}
+                style={
+                  task.priority === i ? { background: i ? FLAG_COLORS[i] : "#2B2238" } : undefined
+                }
               >
                 {p}
               </button>
@@ -175,15 +183,15 @@ export function TaskPanel({
             value={notes}
             onChange={(e) => changeNotes(e.target.value)}
             placeholder="Details, links, anything to remember"
-            className="mt-1.5 min-h-[120px] w-full resize-y bg-ground px-3 py-2.5 text-[15px] leading-relaxed outline-none placeholder:text-ink-3 focus:bg-[#efede8]"
+            className="mt-1.5 min-h-[120px] w-full resize-y rounded-3xl border-2 border-transparent bg-ground px-4 py-3 text-[15px] leading-relaxed outline-none placeholder:text-ink-3 focus:border-accent"
           />
         </div>
 
         <div>
           <span className={label}>Subtasks</span>
-          <ul className="mt-1.5 border-t border-line-soft">
+          <ul className="mt-1.5">
             {subtasks.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 border-b border-line-soft py-2">
+              <li key={s.id} className="flex items-center gap-3 py-1.5">
                 <Check
                   done={s.done}
                   onToggle={() => ws.patchTask(s.id, { done: !s.done })}
@@ -217,12 +225,12 @@ export function TaskPanel({
               value={newSub}
               onChange={(e) => setNewSub(e.target.value)}
               placeholder="Add a subtask"
-              className="w-full border-b border-line-soft bg-transparent py-2 outline-none placeholder:text-ink-3 focus:border-accent"
+              className="mt-1 w-full rounded-full border-2 border-dashed border-line bg-transparent px-4 py-2 outline-none placeholder:text-ink-3 focus:border-accent"
             />
           </form>
         </div>
 
-        <div className="border-t border-line-soft pt-4">
+        <div className="pt-2">
           {confirmDelete ? (
             <div className="flex items-center gap-4">
               <button
