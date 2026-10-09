@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { addDays, today } from "@/lib/dates";
 import { PRIORITY_LABEL, REPEATS, REPEAT_LABEL, type Repeat, type Task } from "@/lib/types";
 import { FLAG_COLORS } from "@/lib/colors";
+import { TEAM } from "@/lib/team";
 import { Check } from "./TaskRow";
 import type { WorkspaceApi } from "./useWorkspace";
 
@@ -233,6 +234,38 @@ export function TaskPanel({
                 When you tick it off, the next one appears.
               </p>
             ) : null}
+          </div>
+        </div>
+
+        <div>
+          <span className={label}>Assigned to</span>
+          <div className="mt-1.5 flex flex-wrap gap-2" role="radiogroup" aria-label="Assigned to">
+            {TEAM.map((p) => {
+              const on = (task.assignee ?? "jackie") === p.id;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() =>
+                    ws.patchTask(task.id, { assignee: p.id === "jackie" ? null : p.id })
+                  }
+                  className={`flex items-center gap-2 rounded-full py-1 ps-1 pe-3.5 text-[14px] font-semibold transition-colors ${
+                    on ? "text-white" : "bg-ground text-ink-2 hover:bg-line-soft"
+                  }`}
+                  style={on ? { background: p.color } : undefined}
+                >
+                  <span
+                    className="flex size-7 items-center justify-center rounded-full font-display text-[15px]"
+                    style={{ background: on ? "rgba(255,255,255,0.28)" : p.color, color: "#fff" }}
+                  >
+                    {p.full[0]}
+                  </span>
+                  {p.name}
+                </button>
+              );
+            })}
           </div>
         </div>
 

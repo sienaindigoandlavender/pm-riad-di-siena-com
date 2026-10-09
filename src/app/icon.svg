@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <circle cx="60" cy="60" r="60" fill="#E4DDFB"/>
+  <g transform="translate(6 10) scale(0.9)">
+    <path d="M22 78 L6 88 L10 70 Z" fill="#2B2238"/>
+    <path d="M24 76 L10 80 L14 68 Z" fill="#fff"/>
+    <g transform="translate(60 40)">
+      <g transform="rotate(-48)"><rect x="-4" y="-30" width="8" height="26" rx="4" fill="#F2994A"/><rect x="-4" y="-30" width="8" height="7" rx="3.5" fill="#2B2238"/></g>
+      <g transform="rotate(-30)"><rect x="-4" y="-30" width="8" height="26" rx="4" fill="#F2994A"/><rect x="-4" y="-30" width="8" height="7" rx="3.5" fill="#2B2238"/></g>
+      <g transform="rotate(-12)"><rect x="-4" y="-30" width="8" height="26" rx="4" fill="#F2994A"/><rect x="-4" y="-30" width="8" height="7" rx="3.5" fill="#2B2238"/></g>
+      <g transform="rotate(6)"><rect x="-4" y="-30" width="8" height="26" rx="4" fill="#F2994A"/><rect x="-4" y="-30" width="8" height="7" rx="3.5" fill="#2B2238"/></g>
+      <g transform="rotate(24)"><rect x="-4" y="-30" width="8" height="26" rx="4" fill="#F2994A"/><rect x="-4" y="-30" width="8" height="7" rx="3.5" fill="#2B2238"/></g>
+    </g>
+    <ellipse cx="60" cy="72" rx="36" ry="32" fill="#F2B48A"/>
+    <ellipse cx="62" cy="84" rx="22" ry="17" fill="#FBE3CC"/>
+    <clipPath id="w"><ellipse cx="38" cy="76" rx="16" ry="20"/></clipPath>
+    <ellipse cx="38" cy="76" rx="16" ry="20" fill="#fff"/>
+    <g clip-path="url(#w)" fill="#2B2238"><rect x="20" y="64" width="40" height="5"/><rect x="20" y="74" width="40" height="5"/><rect x="20" y="84" width="40" height="5"/></g>
+    <path d="M88 62 Q108 66 116 76 Q104 70 88 70 Z" fill="#6B5444"/>
+    <circle cx="76" cy="58" r="6" fill="#2B2238"/>
+    <circle cx="78" cy="56" r="2" fill="#fff"/>
+    <ellipse cx="80" cy="70" rx="5" ry="3" fill="#F08A8A" opacity="0.85"/>
+  </g>
+</svg>

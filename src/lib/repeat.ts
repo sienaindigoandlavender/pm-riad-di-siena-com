@@ -46,6 +46,7 @@ export function nextCopy(t: Task, now = today()): Partial<Task> {
     notes: t.notes,
     priority: t.priority,
     repeat: rule,
+    assignee: t.assignee,
     due_date: t.due_date ? next : t.planned_for ? null : next,
     planned_for: t.planned_for ? next : null,
     start_date: shift(t.start_date),

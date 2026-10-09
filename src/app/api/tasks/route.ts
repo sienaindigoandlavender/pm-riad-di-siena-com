@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, logEvent } from "@/lib/db";
+import { PEOPLE_IDS } from "@/lib/team";
 import { REPEATS as R } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
@@ -22,6 +23,9 @@ export async function POST(req: NextRequest) {
     ...(typeof b.notes === "string" && b.notes ? { notes: b.notes.slice(0, 20000) } : {}),
     // Newer columns: only sent when used, so older databases keep working.
     ...(b.start_date ? { start_date: b.start_date } : {}),
+    ...(typeof b.assignee === "string" && PEOPLE_IDS.includes(b.assignee) && b.assignee !== "jackie"
+      ? { assignee: b.assignee }
+      : {}),
     ...((R as readonly unknown[]).includes(b.repeat) ? { repeat: b.repeat } : {}),
   };
   const { data, error } = await client.from("pm_tasks").insert(row).select().single();

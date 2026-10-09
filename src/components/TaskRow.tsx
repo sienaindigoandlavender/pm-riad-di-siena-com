@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { shortDate, today } from "@/lib/dates";
 import { FLAG_COLORS } from "@/lib/colors";
+import { isMine, person } from "@/lib/team";
 import { REPEAT_LABEL, type Project, type Task } from "@/lib/types";
 
-/** A round check in the project's colour. Finishing a task makes it pop and sparkle. */
+/** A round check in the project's colour that fills, softly, when done. */
 export function Check({
   done,
   onToggle,
@@ -18,7 +19,6 @@ export function Check({
   size?: number;
 }) {
   const [pop, setPop] = useState(false);
-  const [burst, setBurst] = useState(0);
   return (
     <span className="relative inline-flex">
       <button
@@ -29,7 +29,6 @@ export function Check({
         onClick={(e) => {
           e.stopPropagation();
           setPop(true);
-          if (!done) setBurst((b) => b + 1);
           onToggle();
         }}
         onAnimationEnd={() => setPop(false)}
@@ -54,29 +53,9 @@ export function Check({
           </svg>
         ) : null}
       </button>
-      {burst ? (
-        <span key={burst} className="pointer-events-none absolute inset-0" aria-hidden>
-          {SPARKS.map(([dx, dy, c], i) => (
-            <span
-              key={i}
-              className="pm-spark absolute start-1/2 top-1/2 -ms-1 -mt-1 size-2 rounded-full"
-              style={{ background: c, "--dx": `${dx}px`, "--dy": `${dy}px` } as React.CSSProperties}
-            />
-          ))}
-        </span>
-      ) : null}
     </span>
   );
 }
-
-const SPARKS: [number, number, string][] = [
-  [0, -22, "#E0AE1F"],
-  [19, -11, "#E26D8E"],
-  [19, 11, "#5AA9E6"],
-  [0, 22, "#7DBB5A"],
-  [-19, 11, "#9B7FD9"],
-  [-19, -11, "#F2994A"],
-];
 
 export function Flag({ level }: { level: number }) {
   if (!level) return null;
@@ -153,6 +132,7 @@ export function TaskRow({
         </div>
         {hasMeta ? (
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-3">
+            {!isMine(task.assignee) ? <Avatar id={task.assignee} /> : null}
             {showProject && project ? (
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="size-2.5 rounded-full" style={{ background: color }} />
@@ -193,5 +173,22 @@ export function TaskRow({
         ) : null}
       </div>
     </li>
+  );
+}
+
+/** A round initial for whoever a task is given to. */
+export function Avatar({ id, size = 18 }: { id: string | null; size?: number }) {
+  const p = person(id);
+  return (
+    <span className="flex items-center gap-1.5 font-semibold text-ink-2">
+      <span
+        className="flex shrink-0 items-center justify-center rounded-full font-display font-semibold text-white"
+        style={{ background: p.color, width: size, height: size, fontSize: size * 0.58 }}
+        aria-hidden
+      >
+        {p.full[0]}
+      </span>
+      {p.full}
+    </span>
   );
 }

@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { PROJECT_COLORS } from "@/lib/colors";
 import { nextCopy } from "@/lib/repeat";
-import type { Project, Task, TaskPatch } from "@/lib/types";
+import type { Appointment, Feed, Project, Task, TaskPatch } from "@/lib/types";
 
 async function send(url: string, method: string, body?: unknown) {
   const res = await fetch(url, {
@@ -32,6 +32,7 @@ function blankTask(): Task {
     planned_for: null,
     start_date: null,
     repeat: null,
+    assignee: null,
     position: Date.now(),
     created_at: new Date().toISOString(),
   };
@@ -41,9 +42,16 @@ function blankTask(): Task {
  * The workspace state on the client. Every change shows at once (optimistic)
  * and is written to the server in the background; a failure is reported.
  */
-export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
+export function useWorkspace(initial: {
+  projects: Project[];
+  tasks: Task[];
+  appointments?: Appointment[];
+  feeds?: Feed[];
+}) {
   const [projects, setProjects] = useState(initial.projects);
   const [tasks, setTasks] = useState(initial.tasks);
+  const [appointments, setAppointments] = useState(initial.appointments ?? []);
+  const [feeds, setFeeds] = useState(initial.feeds ?? []);
   const [error, setError] = useState<string | null>(null);
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
@@ -118,6 +126,7 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
         planned_for: null,
         start_date: null,
         repeat: null,
+        assignee: null,
         position: Date.now(),
         created_at: new Date().toISOString(),
         ...fields,
@@ -198,9 +207,72 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
     [fail],
   );
 
+  const createAppointment = useCallback(
+    (fields: Partial<Appointment> & { title: string; date: string }) => {
+      const a: Appointment = {
+        id: crypto.randomUUID(),
+        start_time: null,
+        end_time: null,
+        location: "",
+        notes: "",
+        project_id: null,
+        assignee: null,
+        repeat: null,
+        created_at: new Date().toISOString(),
+        ...fields,
+      };
+      setAppointments((list) => [...list, a]);
+      send("/api/appointments", "POST", a).catch(fail);
+      return a;
+    },
+    [fail],
+  );
+
+  const patchAppointment = useCallback(
+    (id: string, patch: Partial<Appointment>) => {
+      setAppointments((list) => list.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+      send(`/api/appointments/${id}`, "PATCH", patch).catch(fail);
+    },
+    [fail],
+  );
+
+  const deleteAppointment = useCallback(
+    (id: string) => {
+      setAppointments((list) => list.filter((a) => a.id !== id));
+      send(`/api/appointments/${id}`, "DELETE").catch(fail);
+    },
+    [fail],
+  );
+
+  const addFeed = useCallback(async (name: string, url: string, color: string) => {
+    const id = crypto.randomUUID();
+    try {
+      const j = await send("/api/feeds", "POST", { id, name, url, color });
+      setFeeds((list) => [...list, j.feed as Feed]);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  }, []);
+
+  const removeFeed = useCallback(
+    (id: string) => {
+      setFeeds((list) => list.filter((f) => f.id !== id));
+      send(`/api/feeds/${id}`, "DELETE").catch(fail);
+    },
+    [fail],
+  );
+
   return {
     projects,
     tasks,
+    appointments,
+    feeds,
+    createAppointment,
+    patchAppointment,
+    deleteAppointment,
+    addFeed,
+    removeFeed,
     error,
     clearError: () => setError(null),
     patchTask,

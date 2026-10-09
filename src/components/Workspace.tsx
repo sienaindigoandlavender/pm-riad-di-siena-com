@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PROJECT_COLORS, SMART, projectColor } from "@/lib/colors";
 import { longDate, marrakechHour, shortDate, today } from "@/lib/dates";
-import type { Project, Task } from "@/lib/types";
-import { CalendarView } from "./CalendarView";
+import { APPT_COLOR, itemsByDay } from "@/lib/calendar";
+import { TEAM, person } from "@/lib/team";
+import type { Appointment, Feed, Project, Task } from "@/lib/types";
+import { AppointmentPanel } from "./AppointmentPanel";
+import { AgendaRow, CalendarView } from "./CalendarView";
+import { useFeedEvents } from "./useFeedEvents";
 import { GanttView } from "./GanttView";
 import { HeroScene, tint } from "./HeroScene";
 import { Burger, Clock, WeatherIcon, useWeather } from "./Sky";
@@ -21,7 +25,8 @@ export type View =
   | { kind: "flagged" }
   | { kind: "calendar" }
   | { kind: "gantt" }
-  | { kind: "project"; id: string };
+  | { kind: "project"; id: string }
+  | { kind: "person"; id: string };
 
 const byPosition = (a: Task, b: Task) => a.position - b.position;
 const byDue = (a: Task, b: Task) =>
@@ -40,13 +45,47 @@ export function Workspace({
   needsUpdate,
 }: {
   view: View;
-  initial: { projects: Project[]; tasks: Task[] };
+  initial: { projects: Project[]; tasks: Task[]; appointments?: Appointment[]; feeds?: Feed[] };
   setupNeeded?: boolean;
   loadError?: string;
   needsUpdate?: boolean;
 }) {
   const ws = useWorkspace(initial);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenIdRaw] = useState<string | null>(null);
+  const [apptId, setApptId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<Appointment | null>(null);
+  const setOpenId = (id: string | null) => {
+    setOpenIdRaw(id);
+    if (id) {
+      setApptId(null);
+      setDraft(null);
+    }
+  };
+  const openAppt = (id: string) => {
+    setOpenIdRaw(null);
+    setDraft(null);
+    setApptId(id);
+  };
+  const newAppt = (date: string, start?: string) => {
+    setOpenIdRaw(null);
+    setApptId(null);
+    const end = start
+      ? `${String(Math.min(23, Number(start.slice(0, 2)) + 1)).padStart(2, "0")}:${start.slice(3)}`
+      : null;
+    setDraft({
+      id: crypto.randomUUID(),
+      title: "",
+      date,
+      start_time: start ?? "09:00",
+      end_time: end ?? "10:00",
+      location: "",
+      notes: "",
+      project_id: null,
+      assignee: null,
+      repeat: null,
+      created_at: new Date().toISOString(),
+    });
+  };
   const [menu, setMenu] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   useEffect(() => {
@@ -74,6 +113,11 @@ export function Workspace({
   const projectById = useMemo(() => new Map(ws.projects.map((p) => [p.id, p])), [ws.projects]);
   const colorOf = (t: Task) =>
     projectColor(t.project_id ? projectById.get(t.project_id) : undefined);
+  const apptColor = (a: Appointment) =>
+    a.project_id && projectById.get(a.project_id)
+      ? projectColor(projectById.get(a.project_id))
+      : APPT_COLOR;
+  const appt = draft ?? ws.appointments.find((a) => a.id === apptId) ?? null;
 
   const topLevel = ws.tasks.filter((t) => !t.parent_id);
   const subCount = (id: string) => {
@@ -110,7 +154,9 @@ export function Workspace({
               ? { title: "Calendar", color: SMART.calendar }
               : view.kind === "gantt"
                 ? { title: "Timeline", color: SMART.gantt }
-                : { title: project?.name ?? "Project", color: projectColor(project) };
+                : view.kind === "person"
+                  ? { title: person(view.id).full, color: person(view.id).color }
+                  : { title: project?.name ?? "Project", color: projectColor(project) };
   const wide = view.kind === "calendar" || view.kind === "gantt";
 
   return (
@@ -128,7 +174,7 @@ export function Workspace({
         onClose={() => setMenu(false)}
       />
 
-      <main className={`min-w-0 flex-1 bg-bg ${open ? "md:me-[452px]" : ""}`}>
+      <main className={`min-w-0 flex-1 bg-bg ${open || appt ? "md:me-[452px]" : ""}`}>
         <div className="sticky top-0 z-10 flex h-[60px] items-center gap-2 bg-bg/95 ps-16 backdrop-blur-sm md:hidden">
           <Hoopoe mood="hello" size={34} />
           <span className="font-display text-[21px] font-semibold">Hudhud</span>
@@ -161,8 +207,8 @@ export function Workspace({
           ) : null}
           {needsUpdate ? (
             <Notice>
-              Repeats and start dates need one small database update: run{" "}
-              <code>supabase/pm-setup.sql</code> again in Supabase.
+              Some new features need a small database update: run <code>supabase/pm-setup.sql</code>{" "}
+              again in Supabase.
             </Notice>
           ) : null}
 
@@ -171,7 +217,10 @@ export function Workspace({
               ws={ws}
               topLevel={topLevel}
               colorOf={colorOf}
-              onOpen={setOpenId}
+              apptColor={apptColor}
+              onOpenTask={setOpenId}
+              onOpenAppt={openAppt}
+              onNewAppt={newAppt}
               QuickAdd={QuickAdd}
               row={(t) => row(t)}
             />
@@ -184,7 +233,17 @@ export function Workspace({
               openId={openId}
             />
           ) : view.kind === "today" ? (
-            <TodayView ws={ws} topLevel={topLevel} row={row} />
+            <>
+              <TodayCalendar
+                ws={ws}
+                topLevel={topLevel}
+                colorOf={colorOf}
+                apptColor={apptColor}
+                onOpenAppt={openAppt}
+                onNewAppt={newAppt}
+              />
+              <TodayView ws={ws} topLevel={topLevel} row={row} />
+            </>
           ) : view.kind === "upcoming" ? (
             <UpcomingView ws={ws} topLevel={topLevel} row={row} />
           ) : view.kind === "flagged" ? (
@@ -198,6 +257,17 @@ export function Workspace({
               sort={(a, b) => b.priority - a.priority || byDue(a, b)}
               addPlaceholder="New flagged task"
               addFields={{ priority: 2 }}
+            />
+          ) : view.kind === "person" ? (
+            <ListView
+              ws={ws}
+              tasks={topLevel.filter((t) => (t.assignee ?? "jackie") === view.id)}
+              projectId={null}
+              color={heading.color}
+              row={row}
+              showProject
+              addPlaceholder={`New task for ${person(view.id).full}`}
+              addFields={{ assignee: view.id === "jackie" ? null : view.id }}
             />
           ) : (
             <ListView
@@ -217,11 +287,37 @@ export function Workspace({
       {open ? (
         <TaskPanel task={open} ws={ws} color={colorOf(open)} onClose={() => setOpenId(null)} />
       ) : null}
+      {appt ? (
+        <AppointmentPanel
+          appt={appt}
+          isNew={!!draft}
+          projects={ws.projects}
+          color={apptColor(appt)}
+          onChange={(patch) =>
+            draft ? setDraft({ ...draft, ...patch }) : ws.patchAppointment(appt.id, patch)
+          }
+          onDelete={() => {
+            ws.deleteAppointment(appt.id);
+            setApptId(null);
+          }}
+          onSave={(patch) => {
+            if (draft) {
+              const t = (patch.title ?? draft.title).trim();
+              ws.createAppointment({ ...draft, ...patch, title: t || "Appointment" });
+            }
+            setDraft(null);
+          }}
+          onClose={() => {
+            setDraft(null);
+            setApptId(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-/** The garden at the top: pastel sky, Hudhud, and a flower for every task finished today. */
+/** The garden at the top: date, time, weather, and a few quiet facts. No scores. */
 function Heading({
   view,
   title,
@@ -239,16 +335,8 @@ function Heading({
   const now = today();
   const open = topLevel.filter((t) => !t.done);
   const doneToday = topLevel.filter((t) => t.done && t.done_at && t.done_at.slice(0, 10) === now);
-  let ring: { done: number; total: number } | null = null;
   let stats: { n: number; label: string }[] = [];
   if (view.kind === "today") {
-    const mine = topLevel.filter(
-      (t) =>
-        t.planned_for === now ||
-        t.due_date === now ||
-        (t.done && t.done_at !== null && t.done_at.slice(0, 10) === now),
-    );
-    ring = { done: mine.filter((t) => t.done).length, total: mine.length };
     const late = open.filter(
       (t) =>
         t.planned_for !== now &&
@@ -257,15 +345,20 @@ function Heading({
           (t.due_date !== null && t.due_date < now)),
     ).length;
     stats = [
-      { n: ring.total - ring.done, label: "to go" },
-      ...(late ? [{ n: late, label: "from earlier" }] : []),
-      ...(doneToday.length ? [{ n: doneToday.length, label: "bloomed today" }] : []),
+      {
+        n: open.filter((t) => t.planned_for === now || t.due_date === now).length,
+        label: "planned",
+      },
+      { n: late, label: "from earlier" },
     ];
   } else if (view.kind === "project") {
-    const mine = topLevel.filter((t) => t.project_id === view.id);
+    stats = [{ n: open.filter((t) => t.project_id === view.id).length, label: "open" }];
+  } else if (view.kind === "person") {
     stats = [
-      { n: mine.filter((t) => !t.done).length, label: "open" },
-      { n: mine.filter((t) => t.done).length, label: "done this month" },
+      {
+        n: open.filter((t) => (t.assignee ?? "jackie") === view.id).length,
+        label: "open",
+      },
     ];
   } else if (view.kind === "upcoming") {
     stats = [
@@ -280,9 +373,8 @@ function Heading({
     stats = [
       {
         n: open.filter((t) => (t.due_date ?? t.planned_for ?? "").startsWith(ym)).length,
-        label: "this month",
+        label: "tasks this month",
       },
-      { n: open.filter((t) => t.repeat).length, label: "repeating" },
     ];
   } else if (view.kind === "gantt") {
     stats = [
@@ -294,7 +386,7 @@ function Heading({
   } else {
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
-  const allDone = !!ring && ring.total > 0 && ring.done === ring.total;
+  stats = stats.filter((s) => s.n > 0);
   const hour = marrakechHour();
   const night = hour >= 19 || hour < 6;
   const weather = useWeather();
@@ -308,43 +400,29 @@ function Heading({
           night ? "text-white" : "text-ink"
         }`}
       >
-        <HeroScene
-          sky={color}
-          hour={hour}
-          mood={allDone ? "cheer" : "hello"}
-          flowers={flowers}
-          weather={weather?.kind}
-        />
-        <div className="relative flex items-start justify-between gap-4 px-6 pt-6 md:px-8 md:pt-7">
-          <div className="min-w-0">
-            <p
-              className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-semibold ${
-                night ? "text-white/90" : "text-ink-2"
-              }`}
-            >
-              <span>{longDate(now)}</span>
-              <span aria-hidden>·</span>
-              <Clock />
-              {weather ? (
-                <span className="pm-in ms-1 flex items-center gap-1 rounded-full bg-white py-0.5 ps-1.5 pe-2.5 text-ink">
-                  <WeatherIcon w={weather} size={20} />
-                  <span className="tabular-nums">{weather.temp}°</span>
-                </span>
-              ) : null}
-            </p>
-            <h1 className="truncate font-display text-[54px] font-semibold leading-[1.02] tracking-[-0.01em] md:text-[76px]">
-              {title}
-            </h1>
-            {allDone ? (
-              <p className="pm-in mt-1 font-display text-[19px] font-medium">
-                All done! Hudhud is dancing.
-              </p>
+        <HeroScene sky={color} hour={hour} mood="hello" flowers={flowers} weather={weather?.kind} />
+        <div className="relative px-6 pt-6 md:px-8 md:pt-7">
+          <p
+            className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-semibold ${
+              night ? "text-white/90" : "text-ink-2"
+            }`}
+          >
+            <span>{longDate(now)}</span>
+            <span aria-hidden>·</span>
+            <Clock />
+            {weather ? (
+              <span className="pm-in ms-1 flex items-center gap-1 rounded-full bg-white py-0.5 ps-1.5 pe-2.5 text-ink">
+                <WeatherIcon w={weather} size={20} />
+                <span className="tabular-nums">{weather.temp}°</span>
+              </span>
             ) : null}
-          </div>
-          {ring && ring.total > 0 ? <Ring {...ring} color={color} /> : null}
+          </p>
+          <h1 className="truncate font-display text-[54px] font-semibold leading-[1.02] tracking-[-0.01em] md:text-[76px]">
+            {title}
+          </h1>
         </div>
       </header>
-      <div className="mb-6 flex flex-wrap gap-2 px-1">
+      <div className="mb-6 flex min-h-[8px] flex-wrap gap-2 px-1">
         {stats.map((st) => (
           <span
             key={st.label}
@@ -356,37 +434,6 @@ function Heading({
         ))}
       </div>
     </>
-  );
-}
-
-function Ring({ done, total, color }: { done: number; total: number; color: string }) {
-  const r = 34;
-  const c = 2 * Math.PI * r;
-  const pct = total ? done / total : 0;
-  return (
-    <div className="relative shrink-0 rounded-full bg-white">
-      <svg width="92" height="92" viewBox="0 0 92 92" aria-hidden className="-rotate-90">
-        <circle cx="46" cy="46" r={r} fill="none" stroke={tint(color, 0.75)} strokeWidth="10" />
-        <circle
-          cx="46"
-          cy="46"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.34,1.56,0.64,1)" }}
-        />
-      </svg>
-      <p className="absolute inset-0 flex flex-col items-center justify-center font-display text-[22px] font-semibold leading-none tabular-nums text-ink">
-        {done}/{total}
-        <span className="mt-1 font-sans text-[11px] font-semibold text-ink-2">
-          {done === total ? "yay!" : "done"}
-        </span>
-      </p>
-    </div>
   );
 }
 
@@ -488,6 +535,61 @@ const Empty = ({
   </li>
 );
 
+/** Today's appointments and calendar events, quietly, above the tasks. */
+function TodayCalendar({
+  ws,
+  topLevel,
+  colorOf,
+  apptColor,
+  onOpenAppt,
+  onNewAppt,
+}: {
+  ws: WorkspaceApi;
+  topLevel: Task[];
+  colorOf: (t: Task) => string;
+  apptColor: (a: Appointment) => string;
+  onOpenAppt: (id: string) => void;
+  onNewAppt: (date: string, start?: string) => void;
+}) {
+  const now = today();
+  const { events } = useFeedEvents(ws.feeds, now, now);
+  const items = (
+    itemsByDay({
+      from: now,
+      to: now,
+      tasks: topLevel.filter(() => false),
+      appointments: ws.appointments,
+      events,
+      feeds: ws.feeds,
+      colorOf,
+      apptColor,
+    }).get(now) ?? []
+  ).filter((i) => i.kind !== "task");
+  return (
+    <section className="mb-8">
+      <div className="flex items-center justify-between px-3 pb-2.5">
+        <h2 className="font-display text-[22px] font-semibold">On the calendar</h2>
+        <button
+          type="button"
+          onClick={() => onNewAppt(now)}
+          className="rounded-full px-2 text-[15px] font-semibold text-accent"
+        >
+          + Appointment
+        </button>
+      </div>
+      <ul className="overflow-hidden rounded-[26px] bg-white py-1.5 shadow-[0_2px_0_#f0e4d6]">
+        {items.length ? (
+          items.map((i) => (
+            <AgendaRow key={i.key} item={i} onOpen={() => i.kind === "appt" && onOpenAppt(i.id)} />
+          ))
+        ) : (
+          <li className="px-5 py-3 text-[15px] text-ink-2">Nothing at a set time today.</li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
 function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; row: RowFn }) {
   const now = today();
   const isToday = (t: Task) => t.planned_for === now || t.due_date === now;
@@ -522,7 +624,7 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
         {todayOpen.length ? (
           todayOpen.map((t) => row(t))
         ) : (
-          <Empty mood={doneToday.length ? "cheer" : "sit"}>
+          <Empty>
             {doneToday.length
               ? "Everything planned for today is done. Look at your garden!"
               : "Nothing planned. Add a task above, or pick one from below."}
@@ -882,6 +984,42 @@ function Sidebar({
         </div>
 
         <ProjectList ws={ws} view={view} live={live} onClose={onClose} />
+
+        <div>
+          <p className="px-2 pb-1.5 font-display text-[21px] font-semibold">People</p>
+          {TEAM.map((p) => {
+            const active = view.kind === "person" && view.id === p.id;
+            const n = live.filter((t) => (t.assignee ?? "jackie") === p.id).length;
+            return (
+              <Link
+                key={p.id}
+                href={`/people/${p.id}`}
+                onClick={onClose}
+                className={`flex h-11 items-center gap-3 rounded-full ps-2 pe-3 ${
+                  active ? "bg-white" : "hover:bg-white/60"
+                }`}
+              >
+                <span
+                  className="flex size-7 items-center justify-center rounded-full font-display text-[15px] font-semibold text-white"
+                  style={{ background: p.color }}
+                >
+                  {p.full[0]}
+                </span>
+                <span className={`flex-1 text-[15px] ${active ? "font-semibold" : ""}`}>
+                  {p.id === "jackie" ? "Me" : p.full}
+                </span>
+                {n ? (
+                  <span
+                    className="min-w-6 rounded-full px-1.5 text-center text-[13px] font-bold tabular-nums"
+                    style={{ background: tint(p.color, 0.8) }}
+                  >
+                    {n}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
 
         <div>
           {adding ? (

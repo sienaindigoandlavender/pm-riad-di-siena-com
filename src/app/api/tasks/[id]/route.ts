@@ -11,6 +11,7 @@ const FIELDS = [
   "planned_for",
   "start_date",
   "repeat",
+  "assignee",
   "position",
 ] as const;
 const RULES = ["daily", "weekdays", "weekly", "monthly", "yearly"];
