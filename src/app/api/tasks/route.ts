@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, logEvent } from "@/lib/db";
+import { REPEATS as R } from "@/lib/types";
 
 export async function POST(req: NextRequest) {
   const client = db();
@@ -18,6 +19,10 @@ export async function POST(req: NextRequest) {
     due_date: b.due_date ?? null,
     priority: [0, 1, 2, 3].includes(b.priority) ? b.priority : 0,
     position: typeof b.position === "number" ? b.position : Date.now(),
+    ...(typeof b.notes === "string" && b.notes ? { notes: b.notes.slice(0, 20000) } : {}),
+    // Newer columns: only sent when used, so older databases keep working.
+    ...(b.start_date ? { start_date: b.start_date } : {}),
+    ...((R as readonly unknown[]).includes(b.repeat) ? { repeat: b.repeat } : {}),
   };
   const { data, error } = await client.from("pm_tasks").insert(row).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

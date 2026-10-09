@@ -28,6 +28,11 @@ create index if not exists pm_tasks_planned_idx on public.pm_tasks (planned_for)
 create index if not exists pm_tasks_project_idx on public.pm_tasks (project_id) where deleted_at is null;
 create index if not exists pm_tasks_parent_idx on public.pm_tasks (parent_id);
 
+-- Added for repeating tasks and the Gantt view.
+alter table public.pm_tasks add column if not exists start_date date;
+alter table public.pm_tasks add column if not exists repeat text
+  check (repeat in ('daily', 'weekdays', 'weekly', 'monthly', 'yearly'));
+
 -- Every change, for history now and notifications later.
 create table if not exists public.pm_events (
   id bigint generated always as identity primary key,

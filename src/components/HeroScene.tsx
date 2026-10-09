@@ -1,4 +1,5 @@
 import { Hoopoe, type Mood } from "./Hoopoe";
+import type { WeatherKind } from "./Sky";
 
 /** Mix a hex colour with white. amount 0 = colour, 1 = white. */
 export function tint(hex: string, amount: number): string {
@@ -11,14 +12,14 @@ export function tint(hex: string, amount: number): string {
 }
 
 const STARS: [number, number][] = [
-  [70, 60],
-  [160, 110],
-  [260, 50],
-  [350, 95],
-  [470, 40],
-  [560, 120],
-  [700, 60],
-  [760, 130],
+  [640, 30],
+  [720, 70],
+  [770, 140],
+  [590, 160],
+  [300, 180],
+  [200, 205],
+  [460, 205],
+  [690, 185],
 ];
 
 const FLOWER_SPOTS: [number, number][] = [
@@ -66,12 +67,16 @@ export function HeroScene({
   hour,
   mood,
   flowers,
+  weather,
 }: {
   sky: string;
   hour: number;
   mood: Mood;
   flowers: string[];
+  weather?: WeatherKind;
 }) {
+  const wet = weather === "rain" || weather === "storm" || weather === "snow";
+  const grey = wet || weather === "cloudy" || weather === "fog";
   const night = hour >= 19 || hour < 6;
   const t = Math.min(1, Math.max(0, (hour - 6) / 13));
   const sunX = 500 + t * 110;
@@ -161,6 +166,52 @@ export function HeroScene({
           ))}
         </>
       )}
+
+      {grey ? (
+        <g fill={night ? "#5A5680" : wet ? "#EDEAF5" : "#fff"}>
+          {[
+            [420, 70, 0.9],
+            [590, 40, 1.1],
+            [760, 90, 0.8],
+          ].map(([x, y, s], i) => (
+            <g key={i} transform={`translate(${x} ${y}) scale(${s})`}>
+              <g className="hh-drift" style={{ animationDelay: `${i * 2}s` }}>
+                <circle cx="0" cy="0" r="22" />
+                <circle cx="28" cy="-10" r="30" />
+                <circle cx="60" cy="0" r="22" />
+                <rect x="0" y="0" width="60" height="22" />
+              </g>
+            </g>
+          ))}
+        </g>
+      ) : null}
+      {wet
+        ? Array.from({ length: 22 }, (_, i) => {
+            const x = 380 + ((i * 53) % 420);
+            const y = 90 + ((i * 37) % 120);
+            return weather === "snow" ? (
+              <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r="4"
+                fill="#fff"
+                className="hh-rain"
+                style={{ animationDelay: `${(i % 7) * 0.25}s` }}
+              />
+            ) : (
+              <path
+                key={i}
+                d={`M${x} ${y} l-4 12`}
+                stroke={night ? "#9DB8F0" : "#5AA9E6"}
+                strokeWidth="3"
+                strokeLinecap="round"
+                className="hh-rain"
+                style={{ animationDelay: `${(i % 7) * 0.18}s` }}
+              />
+            );
+          })
+        : null}
 
       {/* hills */}
       <ellipse cx="180" cy="330" rx="330" ry="120" fill={night ? "#2E4A44" : "#BFE3B4"} />

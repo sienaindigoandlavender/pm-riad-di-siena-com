@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { PROJECT_COLORS } from "@/lib/colors";
+import { nextCopy } from "@/lib/repeat";
 import type { Project, Task, TaskPatch } from "@/lib/types";
 
 async function send(url: string, method: string, body?: unknown) {
@@ -17,6 +18,25 @@ async function send(url: string, method: string, body?: unknown) {
   return res.json();
 }
 
+function blankTask(): Task {
+  return {
+    id: "",
+    title: "",
+    project_id: null,
+    parent_id: null,
+    notes: "",
+    done: false,
+    done_at: null,
+    priority: 0,
+    due_date: null,
+    planned_for: null,
+    start_date: null,
+    repeat: null,
+    position: Date.now(),
+    created_at: new Date().toISOString(),
+  };
+}
+
 /**
  * The workspace state on the client. Every change shows at once (optimistic)
  * and is written to the server in the background; a failure is reported.
@@ -25,14 +45,47 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
   const [projects, setProjects] = useState(initial.projects);
   const [tasks, setTasks] = useState(initial.tasks);
   const [error, setError] = useState<string | null>(null);
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
 
   const fail = useCallback(
     (e: unknown) => setError(e instanceof Error ? e.message : String(e)),
     [],
   );
 
+  const spawnNext = useCallback(
+    (t: Task) => {
+      const fields = nextCopy(t);
+      const id = crypto.randomUUID();
+      const base = Date.now();
+      const copy = { ...blankTask(), ...fields, id, title: t.title, position: base };
+      const subs = tasksRef.current
+        .filter((s) => s.parent_id === t.id)
+        .map((s, i) => ({
+          ...blankTask(),
+          id: crypto.randomUUID(),
+          title: s.title,
+          parent_id: id,
+          project_id: t.project_id,
+          position: base + i + 1,
+        }));
+      setTasks((list) => [...list, copy, ...subs]);
+      (async () => {
+        await send("/api/tasks", "POST", copy);
+        for (const s of subs) await send("/api/tasks", "POST", s);
+      })().catch(fail);
+    },
+    [fail],
+  );
+
   const patchTask = useCallback(
     (id: string, patch: TaskPatch) => {
+      const before = tasksRef.current.find((t) => t.id === id);
+      if (patch.done && before && !before.done && before.repeat) {
+        // A repeating task: tick this one off and plant the next one.
+        spawnNext(before);
+        patch = { ...patch, repeat: null };
+      }
       setTasks((list) =>
         list.map((t) =>
           t.id === id
@@ -48,7 +101,7 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
       );
       send(`/api/tasks/${id}`, "PATCH", patch).catch(fail);
     },
-    [fail],
+    [fail, spawnNext],
   );
 
   const createTask = useCallback(
@@ -63,6 +116,8 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
         priority: 0,
         due_date: null,
         planned_for: null,
+        start_date: null,
+        repeat: null,
         position: Date.now(),
         created_at: new Date().toISOString(),
         ...fields,
@@ -114,6 +169,27 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
     [fail],
   );
 
+  /** Save a new project order (ids top to bottom). Only moved ones are written. */
+  const reorderProjects = useCallback(
+    (ids: string[]) => {
+      setProjects((list) => {
+        const byId = new Map(list.map((p) => [p.id, p]));
+        const next = ids
+          .map((id, i) => {
+            const p = byId.get(id);
+            return p ? { ...p, position: (i + 1) * 1000 } : null;
+          })
+          .filter((p): p is Project => !!p);
+        for (const p of next) {
+          if (byId.get(p.id)?.position !== p.position)
+            send(`/api/projects/${p.id}`, "PATCH", { position: p.position }).catch(fail);
+        }
+        return next;
+      });
+    },
+    [fail],
+  );
+
   const archiveProject = useCallback(
     (id: string) => {
       setProjects((list) => list.filter((p) => p.id !== id));
@@ -134,6 +210,7 @@ export function useWorkspace(initial: { projects: Project[]; tasks: Task[] }) {
     renameProject,
     setProjectColor,
     archiveProject,
+    reorderProjects,
   };
 }
 

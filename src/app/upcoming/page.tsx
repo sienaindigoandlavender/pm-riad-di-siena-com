@@ -9,6 +9,7 @@ export default async function UpcomingPage() {
       initial={w}
       setupNeeded={!w.configured}
       loadError={w.error}
+      needsUpdate={w.needsUpdate}
     />
   );
 }

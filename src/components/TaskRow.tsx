@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { shortDate, today } from "@/lib/dates";
 import { FLAG_COLORS } from "@/lib/colors";
-import type { Project, Task } from "@/lib/types";
+import { REPEAT_LABEL, type Project, type Task } from "@/lib/types";
 
 /** A round check in the project's colour. Finishing a task makes it pop and sparkle. */
 export function Check({
@@ -120,7 +120,11 @@ export function TaskRow({
   const now = today();
   const overdue = !task.done && task.due_date !== null && task.due_date < now;
   const hasMeta =
-    (showProject && project) || task.due_date || (subtasks && subtasks.total > 0) || task.notes;
+    (showProject && project) ||
+    task.due_date ||
+    task.repeat ||
+    (subtasks && subtasks.total > 0) ||
+    task.notes;
 
   return (
     <li
@@ -162,6 +166,12 @@ export function TaskRow({
                 }
               >
                 {shortDate(task.due_date, now)}
+              </span>
+            ) : null}
+            {task.repeat ? (
+              <span className="flex items-center gap-1 font-medium" title="Repeats">
+                <span aria-hidden>↻</span>
+                {REPEAT_LABEL[task.repeat]}
               </span>
             ) : null}
             {subtasks && subtasks.total > 0 ? (

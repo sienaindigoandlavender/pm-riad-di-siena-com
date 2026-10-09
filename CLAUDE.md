@@ -14,8 +14,12 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 
 ## Now
 - No password while building.
-- Views: Today (plan the day, carry over from earlier, up next, done today), Upcoming (by due date), Inbox, Flagged, Projects.
-- Task: title, project, due date, priority (none/low/medium/high), notes, subtasks, "on today".
+- Views: Today (plan the day, carry over from earlier, up next, done today), Upcoming (by due date), Inbox, Flagged, Calendar (month grid; repeating tasks show their next visits as dashed ghosts, daily ones only two weeks ahead), Timeline (Gantt by project, start → due), Projects.
+- Task: title, project, start date, due date, repeat (daily/weekdays/weekly/monthly/yearly), priority, notes, subtasks, "on today". Ticking a repeating task plants the next copy (with fresh subtasks) past today; logic in `src/lib/repeat.ts`.
+- The garden header shows the date, the live Marrakech time and the weather (Open-Meteo, no key, fetched in the browser; rain and clouds appear in the sky).
+- Projects sort A–Z or in her own order (drag the dots; arrow keys work too). The sort choice and a collapsed desktop sidebar are remembered per browser.
+- The burger copies riaddisiena.com: two uneven lines; on phones the menu unrolls full screen from the top.
+- `start_date` and `repeat` were added later: load falls back if they're missing and shows a notice to re-run `pm-setup.sql`.
 
 ## Later
 - Separate logins, assigning tasks to the team (Zahra, Mouad), notifications. `pm_events` already records every change for this.

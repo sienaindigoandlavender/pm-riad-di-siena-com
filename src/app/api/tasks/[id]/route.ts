@@ -9,8 +9,11 @@ const FIELDS = [
   "priority",
   "due_date",
   "planned_for",
+  "start_date",
+  "repeat",
   "position",
 ] as const;
+const RULES = ["daily", "weekdays", "weekly", "monthly", "yearly"];
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const client = db();
@@ -19,6 +22,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const b = await req.json().catch(() => ({}));
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const f of FIELDS) if (f in b) patch[f] = b[f];
+  if ("repeat" in patch && patch.repeat !== null && !RULES.includes(String(patch.repeat)))
+    delete patch.repeat;
   if ("done" in b) patch.done_at = b.done ? new Date().toISOString() : null;
   if (typeof patch.title === "string" && !patch.title.trim()) delete patch.title;
   const { error } = await client.from("pm_tasks").update(patch).eq("id", id);

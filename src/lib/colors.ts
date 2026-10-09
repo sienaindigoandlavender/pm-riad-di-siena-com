@@ -54,6 +54,8 @@ export const SMART = {
   upcoming: "#EF7B6C",
   inbox: "#4CB59A",
   flagged: "#E0AE1F",
+  calendar: "#5AA9E6",
+  gantt: "#D97BBF",
 } as const;
 
 export const FLAG_COLORS = ["", "#E0AE1F", "#F2994A", "#E26D8E"] as const;

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { addDays, today } from "@/lib/dates";
-import { PRIORITY_LABEL, type Task } from "@/lib/types";
+import { PRIORITY_LABEL, REPEATS, REPEAT_LABEL, type Repeat, type Task } from "@/lib/types";
 import { FLAG_COLORS } from "@/lib/colors";
 import { Check } from "./TaskRow";
 import type { WorkspaceApi } from "./useWorkspace";
@@ -62,7 +62,7 @@ export function TaskPanel({
 
   return (
     <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:inset-y-3 md:start-auto md:end-3 md:w-[440px] md:rounded-[32px] md:shadow-[0_10px_40px_rgba(43,34,56,0.14)]">
-      <div className="flex items-center justify-between px-5 pt-4 pb-1">
+      <div className="flex items-center justify-between gap-3 px-5 pb-1 pt-4">
         <button
           type="button"
           onClick={() => ws.patchTask(task.id, { planned_for: plannedToday ? null : now })}
@@ -72,16 +72,62 @@ export function TaskPanel({
         >
           {plannedToday ? "☀ On today" : "Add to today"}
         </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-full bg-ink px-4 py-1.5 text-[15px] font-semibold text-white"
-        >
-          Done
-        </button>
+        <div className="flex items-center gap-2">
+          {confirmDelete ? (
+            <span className="pm-in flex items-center gap-1 rounded-full bg-[#fde4ea] p-1 ps-3 text-[14px] font-semibold text-danger">
+              Delete?
+              <button
+                type="button"
+                onClick={() => {
+                  ws.deleteTask(task.id);
+                  onClose();
+                }}
+                className="rounded-full bg-danger px-3 py-1 text-white"
+              >
+                Yes
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-full px-2.5 py-1 text-ink-2"
+              >
+                No
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="flex size-9 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-[#fde4ea] hover:text-danger"
+              aria-label="Delete task"
+              title="Delete task"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                aria-hidden
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7" />
+              </svg>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-ink px-4 py-1.5 text-[15px] font-semibold text-white"
+          >
+            Done
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-6 px-5 py-5">
+      <div className="flex flex-col gap-6 px-6 pb-10 pt-5">
         <div className="flex items-start gap-3">
           <div className="pt-1.5">
             <Check
@@ -153,6 +199,40 @@ export function TaskPanel({
                 </button>
               ) : null}
             </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className={label}>Starts</span>
+            <input
+              type="date"
+              value={task.start_date ?? ""}
+              onChange={(e) => ws.patchTask(task.id, { start_date: e.target.value || null })}
+              className={`${field} mt-1.5`}
+            />
+          </div>
+          <div>
+            <span className={label}>Repeats</span>
+            <select
+              value={task.repeat ?? ""}
+              onChange={(e) =>
+                ws.patchTask(task.id, { repeat: (e.target.value || null) as Repeat | null })
+              }
+              className={`${field} mt-1.5`}
+            >
+              <option value="">Never</option>
+              {REPEATS.map((r) => (
+                <option key={r} value={r}>
+                  {REPEAT_LABEL[r]}
+                </option>
+              ))}
+            </select>
+            {task.repeat ? (
+              <p className="mt-1.5 text-[13px] text-ink-2">
+                When you tick it off, the next one appears.
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -228,38 +308,6 @@ export function TaskPanel({
               className="mt-1 w-full rounded-full border-2 border-dashed border-line bg-transparent px-4 py-2 outline-none placeholder:text-ink-3 focus:border-accent"
             />
           </form>
-        </div>
-
-        <div className="pt-2">
-          {confirmDelete ? (
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => {
-                  ws.deleteTask(task.id);
-                  onClose();
-                }}
-                className="text-[15px] font-medium text-danger"
-              >
-                Delete task
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="text-[15px] text-ink-2"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="text-[15px] text-danger"
-            >
-              Delete…
-            </button>
-          )}
         </div>
       </div>
     </aside>

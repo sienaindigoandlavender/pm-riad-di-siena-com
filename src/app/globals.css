@@ -194,6 +194,23 @@
   animation: hh-bob 3s ease-in-out infinite;
 }
 
+@keyframes hh-rain {
+  from {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+.hh-rain {
+  animation: hh-rain 1.2s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

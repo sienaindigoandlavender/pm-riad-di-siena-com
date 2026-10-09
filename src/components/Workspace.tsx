@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PROJECT_COLORS, SMART, projectColor } from "@/lib/colors";
 import { longDate, marrakechHour, shortDate, today } from "@/lib/dates";
 import type { Project, Task } from "@/lib/types";
+import { CalendarView } from "./CalendarView";
+import { GanttView } from "./GanttView";
 import { HeroScene, tint } from "./HeroScene";
+import { Burger, Clock, WeatherIcon, useWeather } from "./Sky";
 import { Hoopoe } from "./Hoopoe";
 import { TaskPanel } from "./TaskPanel";
 import { TaskRow } from "./TaskRow";
@@ -16,6 +19,8 @@ export type View =
   | { kind: "upcoming" }
   | { kind: "inbox" }
   | { kind: "flagged" }
+  | { kind: "calendar" }
+  | { kind: "gantt" }
   | { kind: "project"; id: string };
 
 const byPosition = (a: Task, b: Task) => a.position - b.position;
@@ -32,15 +37,39 @@ export function Workspace({
   initial,
   setupNeeded,
   loadError,
+  needsUpdate,
 }: {
   view: View;
   initial: { projects: Project[]; tasks: Task[] };
   setupNeeded?: boolean;
   loadError?: string;
+  needsUpdate?: boolean;
 }) {
   const ws = useWorkspace(initial);
   const [openId, setOpenId] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("pm-sidebar") === "closed");
+    } catch {}
+  }, []);
+  useEffect(() => {
+    document.body.style.overflow = menu ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menu]);
+  const toggleMenu = () => {
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      setCollapsed((c) => {
+        try {
+          localStorage.setItem("pm-sidebar", c ? "open" : "closed");
+        } catch {}
+        return !c;
+      });
+    } else setMenu((m) => !m);
+  };
   const open = ws.tasks.find((t) => t.id === openId) ?? null;
   const projectById = useMemo(() => new Map(ws.projects.map((p) => [p.id, p])), [ws.projects]);
   const colorOf = (t: Task) =>
@@ -77,32 +106,39 @@ export function Workspace({
           ? { title: "Inbox", color: SMART.inbox }
           : view.kind === "flagged"
             ? { title: "Flagged", color: SMART.flagged }
-            : { title: project?.name ?? "Project", color: projectColor(project) };
+            : view.kind === "calendar"
+              ? { title: "Calendar", color: SMART.calendar }
+              : view.kind === "gantt"
+                ? { title: "Timeline", color: SMART.gantt }
+                : { title: project?.name ?? "Project", color: projectColor(project) };
+  const wide = view.kind === "calendar" || view.kind === "gantt";
 
   return (
     <div className="flex min-h-dvh">
-      <Sidebar ws={ws} view={view} open={menu} onClose={() => setMenu(false)} />
+      <Burger
+        open={menu}
+        onClick={toggleMenu}
+        className="fixed start-4 top-3 z-[60] md:start-5 md:top-6"
+      />
+      <Sidebar
+        ws={ws}
+        view={view}
+        open={menu}
+        collapsed={collapsed}
+        onClose={() => setMenu(false)}
+      />
 
-      <main className={`min-w-0 flex-1 bg-bg ${open ? "md:me-[440px]" : ""}`}>
-        <div className="sticky top-0 z-10 flex items-center bg-bg px-4 py-2.5 md:hidden">
-          <button
-            type="button"
-            className="p-1"
-            onClick={() => setMenu(true)}
-            aria-label="Open menu"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke="#2B2238"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+      <main className={`min-w-0 flex-1 bg-bg ${open ? "md:me-[452px]" : ""}`}>
+        <div className="sticky top-0 z-10 flex h-[60px] items-center gap-2 bg-bg/95 ps-16 backdrop-blur-sm md:hidden">
+          <Hoopoe mood="hello" size={34} />
+          <span className="font-display text-[21px] font-semibold">Hudhud</span>
         </div>
 
-        <div className="mx-auto max-w-[760px] px-3 pb-28 pt-1 md:px-10 md:pt-8">
+        <div
+          className={`mx-auto px-3 pb-28 pt-1 md:px-10 md:pt-8 ${wide ? "max-w-[1180px]" : "max-w-[760px]"} ${
+            collapsed ? "md:ps-20" : ""
+          }`}
+        >
           <Heading
             view={view}
             title={heading.title}
@@ -123,8 +159,31 @@ export function Workspace({
           {ws.error ? (
             <Notice onClose={ws.clearError}>A change didn&apos;t save: {ws.error}</Notice>
           ) : null}
+          {needsUpdate ? (
+            <Notice>
+              Repeats and start dates need one small database update: run{" "}
+              <code>supabase/pm-setup.sql</code> again in Supabase.
+            </Notice>
+          ) : null}
 
-          {view.kind === "today" ? (
+          {view.kind === "calendar" ? (
+            <CalendarView
+              ws={ws}
+              topLevel={topLevel}
+              colorOf={colorOf}
+              onOpen={setOpenId}
+              QuickAdd={QuickAdd}
+              row={(t) => row(t)}
+            />
+          ) : view.kind === "gantt" ? (
+            <GanttView
+              projects={ws.projects}
+              topLevel={topLevel}
+              colorOf={colorOf}
+              onOpen={setOpenId}
+              openId={openId}
+            />
+          ) : view.kind === "today" ? (
             <TodayView ws={ws} topLevel={topLevel} row={row} />
           ) : view.kind === "upcoming" ? (
             <UpcomingView ws={ws} topLevel={topLevel} row={row} />
@@ -216,12 +275,29 @@ function Heading({
     stats = [
       { n: open.filter((t) => t.project_id === null).length, label: "waiting for a project" },
     ];
+  } else if (view.kind === "calendar") {
+    const ym = now.slice(0, 7);
+    stats = [
+      {
+        n: open.filter((t) => (t.due_date ?? t.planned_for ?? "").startsWith(ym)).length,
+        label: "this month",
+      },
+      { n: open.filter((t) => t.repeat).length, label: "repeating" },
+    ];
+  } else if (view.kind === "gantt") {
+    stats = [
+      {
+        n: open.filter((t) => t.start_date || t.due_date || t.planned_for).length,
+        label: "on the timeline",
+      },
+    ];
   } else {
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
   const allDone = !!ring && ring.total > 0 && ring.done === ring.total;
   const hour = marrakechHour();
   const night = hour >= 19 || hour < 6;
+  const weather = useWeather();
   const flowers = (
     view.kind === "project" ? doneToday.filter((t) => t.project_id === view.id) : doneToday
   ).map(colorOf);
@@ -232,11 +308,29 @@ function Heading({
           night ? "text-white" : "text-ink"
         }`}
       >
-        <HeroScene sky={color} hour={hour} mood={allDone ? "cheer" : "hello"} flowers={flowers} />
+        <HeroScene
+          sky={color}
+          hour={hour}
+          mood={allDone ? "cheer" : "hello"}
+          flowers={flowers}
+          weather={weather?.kind}
+        />
         <div className="relative flex items-start justify-between gap-4 px-6 pt-6 md:px-8 md:pt-7">
           <div className="min-w-0">
-            <p className={`text-[15px] font-semibold ${night ? "text-white/85" : "text-ink-2"}`}>
-              {view.kind === "today" ? longDate(now) : "\u00a0"}
+            <p
+              className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] font-semibold ${
+                night ? "text-white/90" : "text-ink-2"
+              }`}
+            >
+              <span>{longDate(now)}</span>
+              <span aria-hidden>·</span>
+              <Clock />
+              {weather ? (
+                <span className="pm-in ms-1 flex items-center gap-1 rounded-full bg-white py-0.5 ps-1.5 pe-2.5 text-ink">
+                  <WeatherIcon w={weather} size={20} />
+                  <span className="tabular-nums">{weather.temp}°</span>
+                </span>
+              ) : null}
             </p>
             <h1 className="truncate font-display text-[54px] font-semibold leading-[1.02] tracking-[-0.01em] md:text-[76px]">
               {title}
@@ -628,6 +722,30 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
 }
 
 const ICONS: Record<string, React.ReactNode> = {
+  calendar: (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
+      <rect
+        x="3"
+        y="4"
+        width="14"
+        height="13"
+        rx="2.5"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.8"
+      />
+      <path d="M3 8h14M7 2.5v3M13 2.5v3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="7" cy="11.5" r="1.1" fill="#fff" />
+      <circle cx="10" cy="11.5" r="1.1" fill="#fff" />
+      <circle cx="13" cy="11.5" r="1.1" fill="#fff" />
+      <circle cx="7" cy="14.5" r="1.1" fill="#fff" />
+    </svg>
+  ),
+  gantt: (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
+      <path d="M3 5h8M6 10h9M4 15h6" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+    </svg>
+  ),
   today: (
     <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
       <rect
@@ -679,17 +797,20 @@ function Sidebar({
   ws,
   view,
   open,
+  collapsed,
   onClose,
 }: {
   ws: WorkspaceApi;
   view: View;
   open: boolean;
+  collapsed: boolean;
   onClose: () => void;
 }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const now = today();
   const live = ws.tasks.filter((t) => !t.parent_id && !t.done);
+  const ym = now.slice(0, 7);
   const counts = {
     today: live.filter(
       (t) =>
@@ -701,6 +822,8 @@ function Sidebar({
     upcoming: live.filter((t) => t.due_date !== null && t.due_date >= now).length,
     inbox: live.filter((t) => t.project_id === null).length,
     flagged: live.filter((t) => t.priority > 0).length,
+    calendar: live.filter((t) => (t.due_date ?? t.planned_for ?? "").startsWith(ym)).length,
+    gantt: live.filter((t) => t.start_date || t.due_date || t.planned_for).length,
   };
 
   const tile = (kind: keyof typeof SMART, href: string, label: string) => {
@@ -732,14 +855,20 @@ function Sidebar({
   };
 
   return (
-    <>
-      {open ? <div className="fixed inset-0 z-30 bg-black/25 md:hidden" onClick={onClose} /> : null}
-      <nav
-        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto bg-ground px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
-          open ? "flex" : "hidden"
+    <nav
+      aria-hidden={undefined}
+      className={`fixed inset-0 z-40 flex shrink-0 origin-top flex-col overflow-hidden bg-ground transition-[scale,opacity] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:sticky md:inset-auto md:top-0 md:z-0 md:h-dvh md:w-[280px] md:scale-y-100 md:opacity-100 md:transition-none ${
+        open
+          ? "scale-y-100 opacity-100"
+          : "pointer-events-none scale-y-0 opacity-0 md:pointer-events-auto"
+      } ${collapsed ? "md:hidden" : ""}`}
+    >
+      <div
+        className={`flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3.5 pb-8 pt-3 transition-opacity delay-200 duration-500 md:py-5 md:opacity-100 md:delay-0 ${
+          open ? "opacity-100" : "opacity-0"
         }`}
       >
-        <div className="flex items-center gap-2 px-1">
+        <div className="flex h-[38px] items-center gap-2 ps-12">
           <Hoopoe mood="hello" size={44} />
           <span className="font-display text-[24px] font-semibold">Hudhud</span>
         </div>
@@ -748,58 +877,15 @@ function Sidebar({
           {tile("upcoming", "/upcoming", "Upcoming")}
           {tile("inbox", "/inbox", "Inbox")}
           {tile("flagged", "/flagged", "Flagged")}
+          {tile("calendar", "/calendar", "Calendar")}
+          {tile("gantt", "/gantt", "Timeline")}
         </div>
 
+        <ProjectList ws={ws} view={view} live={live} onClose={onClose} />
+
         <div>
-          <p className="px-2 pb-1.5 font-display text-[21px] font-semibold">Projects</p>
-          <div className="flex flex-col">
-            {ws.projects.map((p) => {
-              const active = view.kind === "project" && view.id === p.id;
-              const color = projectColor(p);
-              const n = live.filter((t) => t.project_id === p.id).length;
-              return (
-                <Link
-                  key={p.id}
-                  href={`/p/${p.id}`}
-                  onClick={onClose}
-                  className={`flex items-center gap-3 rounded-full px-2 py-1.5 ${
-                    active ? "bg-white" : "hover:bg-white/60"
-                  }`}
-                >
-                  <span
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full"
-                    style={{ background: color }}
-                  >
-                    <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
-                      <circle cx="4" cy="4.5" r="1.2" fill="#fff" />
-                      <circle cx="4" cy="8" r="1.2" fill="#fff" />
-                      <circle cx="4" cy="11.5" r="1.2" fill="#fff" />
-                      <path
-                        d="M7 4.5h6M7 8h6M7 11.5h6"
-                        stroke="#fff"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  <span className={`flex-1 truncate text-[15px] ${active ? "font-semibold" : ""}`}>
-                    {p.name}
-                  </span>
-                  {n ? (
-                    <span
-                      className="me-1 min-w-6 rounded-full px-1.5 text-center text-[13px] font-bold tabular-nums"
-                      style={{ background: tint(color, 0.8), color: "#2B2238" }}
-                    >
-                      {n}
-                    </span>
-                  ) : null}
-                </Link>
-              );
-            })}
-          </div>
           {adding ? (
             <form
-              className="mt-1"
               onSubmit={(e) => {
                 e.preventDefault();
                 const n = name.trim();
@@ -821,13 +907,194 @@ function Sidebar({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="mt-1 flex items-center gap-2 px-2 py-2 text-[15px] font-semibold text-accent"
+              className="flex items-center gap-2 px-2 py-1 text-[15px] font-semibold text-accent"
             >
               <span className="text-[20px] leading-none">+</span> Add project
             </button>
           )}
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
+  );
+}
+
+const ROW_H = 44;
+
+/** Projects, A to Z or in your own order. In your order, drag the dots to move one. */
+function ProjectList({
+  ws,
+  view,
+  live,
+  onClose,
+}: {
+  ws: WorkspaceApi;
+  view: View;
+  live: Task[];
+  onClose: () => void;
+}) {
+  const [sort, setSort] = useState<"mine" | "az">("mine");
+  const [drag, setDrag] = useState<{ id: string; startY: number; dy: number } | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("pm-project-sort") === "az") setSort("az");
+    } catch {}
+  }, []);
+  const choose = (v: "mine" | "az") => {
+    setSort(v);
+    try {
+      localStorage.setItem("pm-project-sort", v);
+    } catch {}
+  };
+
+  const mine = [...ws.projects].sort((a, b) => a.position - b.position);
+  const list =
+    sort === "az"
+      ? [...ws.projects].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }))
+      : mine;
+
+  // While dragging, show the order it would drop into.
+  let shown = list;
+  let dragIndex = -1;
+  let target = -1;
+  if (drag && sort === "mine") {
+    dragIndex = list.findIndex((p) => p.id === drag.id);
+    target = Math.max(0, Math.min(list.length - 1, dragIndex + Math.round(drag.dy / ROW_H)));
+    shown = [...list];
+    const [moved] = shown.splice(dragIndex, 1);
+    shown.splice(target, 0, moved!);
+  }
+
+  const move = (id: string, by: number) => {
+    const ids = mine.map((p) => p.id);
+    const i = ids.indexOf(id);
+    const j = Math.max(0, Math.min(ids.length - 1, i + by));
+    if (i === j) return;
+    ids.splice(j, 0, ids.splice(i, 1)[0]!);
+    ws.reorderProjects(ids);
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between px-2 pb-1.5">
+        <p className="font-display text-[21px] font-semibold">Projects</p>
+        <div
+          className="flex rounded-full bg-white p-0.5 text-[13px] font-bold"
+          role="radiogroup"
+          aria-label="Sort projects"
+        >
+          {(
+            [
+              ["mine", "My order"],
+              ["az", "A–Z"],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={sort === v}
+              onClick={() => choose(v)}
+              className={`rounded-full px-2.5 py-1 transition-colors ${
+                sort === v ? "bg-ink text-white" : "text-ink-2"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div ref={listRef} className="relative flex flex-col">
+        {shown.map((p) => {
+          const active = view.kind === "project" && view.id === p.id;
+          const color = projectColor(p);
+          const n = live.filter((t) => t.project_id === p.id).length;
+          const dragging = drag?.id === p.id;
+          return (
+            <div
+              key={p.id}
+              className={`group flex items-center rounded-full transition-colors ${
+                active ? "bg-white" : "hover:bg-white/60"
+              } ${dragging ? "z-10 bg-white shadow-[0_6px_18px_rgba(43,34,56,0.15)]" : ""}`}
+              style={{ height: ROW_H }}
+            >
+              <Link
+                href={`/p/${p.id}`}
+                onClick={onClose}
+                className="flex min-w-0 flex-1 items-center gap-3 ps-2"
+                draggable={false}
+              >
+                <span
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: color }}
+                >
+                  <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+                    <circle cx="4" cy="4.5" r="1.2" fill="#fff" />
+                    <circle cx="4" cy="8" r="1.2" fill="#fff" />
+                    <circle cx="4" cy="11.5" r="1.2" fill="#fff" />
+                    <path
+                      d="M7 4.5h6M7 8h6M7 11.5h6"
+                      stroke="#fff"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                <span className={`flex-1 truncate text-[15px] ${active ? "font-semibold" : ""}`}>
+                  {p.name}
+                </span>
+                {n ? (
+                  <span
+                    className="me-1 min-w-6 rounded-full px-1.5 text-center text-[13px] font-bold tabular-nums"
+                    style={{ background: tint(color, 0.8), color: "#2B2238" }}
+                  >
+                    {n}
+                  </span>
+                ) : null}
+              </Link>
+              {sort === "mine" ? (
+                <button
+                  type="button"
+                  aria-label={`Move ${p.name}. Drag, or use the arrow keys.`}
+                  className="flex h-full w-8 shrink-0 cursor-grab touch-none items-center justify-center rounded-full text-ink-3 active:cursor-grabbing"
+                  onPointerDown={(e) => {
+                    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+                    setDrag({ id: p.id, startY: e.clientY, dy: 0 });
+                  }}
+                  onPointerMove={(e) =>
+                    setDrag((d) => (d && d.id === p.id ? { ...d, dy: e.clientY - d.startY } : d))
+                  }
+                  onPointerUp={() => {
+                    if (drag && target >= 0 && target !== dragIndex)
+                      ws.reorderProjects(shown.map((x) => x.id));
+                    setDrag(null);
+                  }}
+                  onPointerCancel={() => setDrag(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      move(p.id, -1);
+                    }
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      move(p.id, 1);
+                    }
+                  }}
+                >
+                  <svg viewBox="0 0 10 16" width="10" height="16" aria-hidden>
+                    {[3, 8, 13].map((y) => (
+                      <g key={y}>
+                        <circle cx="2.5" cy={y} r="1.5" fill="currentColor" />
+                        <circle cx="7.5" cy={y} r="1.5" fill="currentColor" />
+                      </g>
+                    ))}
+                  </svg>
+                </button>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

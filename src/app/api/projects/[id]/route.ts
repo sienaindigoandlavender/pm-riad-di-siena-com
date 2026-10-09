@@ -10,6 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (typeof b.name === "string" && b.name.trim()) patch.name = b.name.trim().slice(0, 120);
   if (typeof b.color === "string") patch.color = b.color;
   if (typeof b.archived === "boolean") patch.archived = b.archived;
+  if (typeof b.position === "number" && Number.isFinite(b.position)) patch.position = b.position;
   const { error } = await client.from("pm_projects").update(patch).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await logEvent("project_updated", null, { project_id: id, ...patch });
