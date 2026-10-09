@@ -8,7 +8,7 @@ import type { WorkspaceApi } from "./useWorkspace";
 
 const label = "block text-[13px] font-semibold text-ink-2";
 const field =
-  "w-full rounded-[10px] bg-ground px-3 py-2.5 text-[15px] outline-none focus:ring-2 focus:ring-accent";
+  "w-full border-b-2 border-line bg-transparent px-1 py-2.5 text-[15px] outline-none focus:border-ink";
 
 /** Everything about one task. Changes save as you go. */
 export function TaskPanel({
@@ -60,12 +60,12 @@ export function TaskPanel({
   const plannedToday = task.planned_for === now;
 
   return (
-    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:inset-y-0 md:start-auto md:end-0 md:w-[440px] md:border-s md:border-line-soft">
+    <aside className="pm-panel fixed inset-0 z-30 flex flex-col overflow-y-auto bg-white md:border-s-2 md:border-ink md:inset-y-0 md:start-auto md:end-0 md:w-[440px] ">
       <div className="flex items-center justify-between border-b border-line-soft px-5 py-3">
         <button
           type="button"
           onClick={() => ws.patchTask(task.id, { planned_for: plannedToday ? null : now })}
-          className={`rounded-full px-3 py-1 text-[13px] font-medium ${
+          className={`px-3 py-1 text-[13px] font-medium ${
             plannedToday ? "bg-accent text-white" : "bg-accent-soft text-accent"
           }`}
         >
@@ -153,16 +153,14 @@ export function TaskPanel({
 
         <div>
           <span className={label}>Priority</span>
-          <div className="mt-1.5 grid grid-cols-4 rounded-[10px] bg-ground p-0.5">
+          <div className="mt-1.5 grid grid-cols-4 border-2 border-ink">
             {PRIORITY_LABEL.map((p, i) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => ws.patchTask(task.id, { priority: i as Task["priority"] })}
-                className={`rounded-[6px] py-1.5 text-[13px] font-medium ${
-                  task.priority === i
-                    ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.12)]"
-                    : "text-ink-2"
+                className={`py-1.5 text-[13px] font-medium ${
+                  task.priority === i ? "bg-ink text-white" : "text-ink-2"
                 }`}
               >
                 {p}
@@ -177,7 +175,7 @@ export function TaskPanel({
             value={notes}
             onChange={(e) => changeNotes(e.target.value)}
             placeholder="Details, links, anything to remember"
-            className={`${field} mt-1.5 min-h-[120px] resize-y leading-relaxed placeholder:text-ink-3`}
+            className="mt-1.5 min-h-[120px] w-full resize-y bg-ground px-3 py-2.5 text-[15px] leading-relaxed outline-none placeholder:text-ink-3 focus:bg-[#efede8]"
           />
         </div>
 

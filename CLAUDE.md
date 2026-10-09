@@ -3,9 +3,9 @@
 Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mature version becomes a standalone app for all her projects, not only Riad di Siena. Not a SaaS.
 
 ## Design
-- Apple-sleek, almost clinical, but alive like Reminders: Helvetica Neue, white, black ink, hairlines, no decoration.
+- Flat and delightful, not corporate (not ClickUp): Helvetica Neue, square shapes, no rounded boxes, no cards, no shadows. Solid colour planes and heavy black rules. Circles only for checks and the ring.
 - Earth colours, Sunsama-soft (no rituals): slate, sage, clay, ochre, plum, teal, olive, dusty rose, walnut, stone blue. Each project wears one (check rings, dot, title); smart lists (Today slate, Upcoming clay, Inbox stone, Flagged ochre) are tiles in the sidebar. Warm off-white ground (#f5f4f1), slate accent (#4a6b85). No bright Apple orange or blue.
-- The view title is big, bold and in its list colour; Today shows a ring that fills as the day's tasks get done.
+- Each view opens with a flat landscape band: sky in the list colour, a cream sun that moves with the Marrakech hour (moon and stars after 19h), earth-tone hills and a palm; huge white title; Today shows a white ring that fills as tasks get done, and two birds appear when all are done.
 - Sentence-case headings, no all-caps labels.
 - Legibility always: body 15px, meta 13px minimum, secondary text #424245 / #6e6e73, never paler.
 - Calm and fast: changes show instantly (optimistic) and save in the background.

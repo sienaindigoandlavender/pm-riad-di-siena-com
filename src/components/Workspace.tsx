@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PROJECT_COLORS, SMART, projectColor } from "@/lib/colors";
-import { longDate, shortDate, today } from "@/lib/dates";
+import { longDate, marrakechHour, shortDate, today } from "@/lib/dates";
 import type { Project, Task } from "@/lib/types";
+import { HeroScene } from "./HeroScene";
 import { TaskPanel } from "./TaskPanel";
 import { TaskRow } from "./TaskRow";
 import { useWorkspace, type WorkspaceApi } from "./useWorkspace";
@@ -81,8 +82,8 @@ export function Workspace({
     <div className="flex min-h-dvh">
       <Sidebar ws={ws} view={view} open={menu} onClose={() => setMenu(false)} />
 
-      <main className={`min-w-0 flex-1 bg-ground ${open ? "md:me-[440px]" : ""}`}>
-        <div className="sticky top-0 z-10 flex items-center border-b border-line-soft bg-ground/85 px-4 py-2.5 backdrop-blur-xl md:hidden">
+      <main className={`min-w-0 flex-1 bg-white ${open ? "md:me-[440px]" : ""}`}>
+        <div className="sticky top-0 z-10 flex items-center border-b border-line-soft bg-white px-4 py-2.5 md:hidden">
           <button
             type="button"
             className="p-1"
@@ -100,7 +101,7 @@ export function Workspace({
           </button>
         </div>
 
-        <div className="mx-auto max-w-[760px] px-2 pb-28 pt-4 md:px-10 md:pt-8">
+        <div className="mx-auto max-w-[760px] px-0 pb-28 pt-0 md:px-10 md:pt-8">
           <Heading
             view={view}
             title={heading.title}
@@ -213,34 +214,32 @@ function Heading({
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
   return (
-    <header
-      className="relative mx-2 mb-6 overflow-hidden rounded-[28px] px-6 pb-6 pt-5 text-white md:mx-0 md:px-8 md:pb-8 md:pt-7"
-      style={{ background: color }}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -end-16 -top-24 size-72 rounded-full bg-white/10"
+    <header className="relative mb-8 h-[280px] overflow-hidden text-white md:h-[320px]">
+      <HeroScene
+        sky={color}
+        hour={marrakechHour()}
+        allDone={!!ring && ring.total > 0 && ring.done === ring.total}
       />
-      <div className="relative flex items-end justify-between gap-4">
+      <div className="relative flex items-start justify-between gap-4 px-6 pt-6 md:px-8 md:pt-8">
         <div className="min-w-0">
-          <p className="text-[15px] font-medium text-white/80">
+          <p className="text-[15px] font-medium text-white/85">
             {view.kind === "today" ? longDate(now) : "\u00a0"}
           </p>
-          <h1 className="truncate text-[48px] font-bold leading-[1] tracking-[-0.035em] md:text-[64px]">
+          <h1 className="truncate text-[52px] font-bold leading-[1] tracking-[-0.035em] md:text-[72px]">
             {title}
           </h1>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {stats.map((st) => (
-              <span
-                key={st.label}
-                className="rounded-full bg-white/20 px-3 py-1 text-[14px] font-medium tabular-nums"
-              >
-                {st.n} {st.label}
-              </span>
-            ))}
-          </div>
         </div>
         {ring && ring.total > 0 ? <Ring {...ring} /> : null}
+      </div>
+      <div className="absolute bottom-5 start-6 flex flex-wrap gap-2 md:start-8">
+        {stats.map((st) => (
+          <span
+            key={st.label}
+            className="bg-black/30 px-2.5 py-1 text-[14px] font-medium tabular-nums text-white"
+          >
+            {st.n} {st.label}
+          </span>
+        ))}
       </div>
     </header>
   );
@@ -279,7 +278,7 @@ function Ring({ done, total }: { done: number; total: number }) {
 
 function Notice({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
   return (
-    <div className="mx-4 mb-5 flex items-start justify-between gap-4 rounded-[12px] bg-ground px-4 py-3 text-[15px] text-ink-2">
+    <div className="mx-4 mb-5 flex items-start justify-between gap-4 border-s-4 border-ink bg-ground px-4 py-3 text-[15px] text-ink-2">
       <p>{children}</p>
       {onClose ? (
         <button type="button" onClick={onClose} className="font-medium text-accent">
@@ -302,9 +301,9 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-8 first:mt-0">
+    <section className="mt-10 first:mt-0">
       {title ? (
-        <div className="flex items-baseline justify-between px-4 pb-2.5">
+        <div className="flex items-baseline justify-between border-b-2 border-ink px-4 pb-2">
           <h2 className="text-[20px] font-bold tracking-[-0.015em]">
             {title}
             {count !== undefined ? (
@@ -314,7 +313,7 @@ function Section({
           {action}
         </div>
       ) : null}
-      <ul className="mx-2 overflow-hidden rounded-[18px] bg-white md:mx-0">{children}</ul>
+      <ul>{children}</ul>
     </section>
   );
 }
@@ -338,11 +337,11 @@ function QuickAdd({
         onAdd(t);
         setValue("");
       }}
-      className="mx-2 mb-4 flex items-center gap-3.5 rounded-[18px] bg-white px-4 py-3.5 focus-within:ring-2 md:mx-0"
-      style={{ ["--tw-ring-color" as string]: color }}
+      className="mb-6 flex items-center gap-3.5 border-b-2 px-4 py-3"
+      style={{ borderColor: color }}
     >
       <span
-        className="flex size-[22px] shrink-0 items-center justify-center rounded-full text-[18px] font-medium leading-none text-white"
+        className="flex size-[22px] shrink-0 items-center justify-center text-[18px] font-medium leading-none text-white"
         style={{ background: color }}
         aria-hidden
       >
@@ -379,7 +378,7 @@ function TodayView({ ws, topLevel, row }: { ws: WorkspaceApi; topLevel: Task[]; 
     <button
       type="button"
       onClick={() => plan(t)}
-      className="whitespace-nowrap rounded-full bg-accent-soft px-3 py-1 text-[13px] font-medium text-accent md:opacity-0 md:group-hover:opacity-100"
+      className="whitespace-nowrap bg-accent-soft px-3 py-1 text-[13px] font-medium text-accent md:opacity-0 md:group-hover:opacity-100"
     >
       Do today
     </button>
@@ -543,7 +542,7 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
           onBlur={() =>
             name.trim() && name.trim() !== project.name && ws.renameProject(project.id, name.trim())
           }
-          className="rounded-[10px] bg-ground px-3 py-2 text-[15px] outline-none focus:ring-2 focus:ring-accent"
+          className="border-b-2 border-line bg-transparent px-1 py-2 text-[15px] outline-none focus:border-ink"
           aria-label="Project name"
         />
         <div className="flex gap-2" role="radiogroup" aria-label="Project colour">
@@ -555,7 +554,7 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
               aria-checked={current === c}
               aria-label={c}
               onClick={() => ws.setProjectColor(project.id, c)}
-              className="size-6 rounded-full"
+              className="size-6"
               style={{
                 background: c,
                 boxShadow: current === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : undefined,
@@ -678,15 +677,13 @@ function Sidebar({
         href={href}
         onClick={onClose}
         aria-current={active ? "page" : undefined}
-        className={`flex flex-col gap-3 rounded-[16px] p-3 text-white transition-transform active:scale-[0.98] ${
-          active ? "ring-2 ring-ink ring-offset-2 ring-offset-white" : ""
+        className={`flex flex-col gap-3 p-3 text-white ${
+          active ? "shadow-[inset_0_-5px_0_#1c1b19]" : ""
         }`}
         style={{ background: SMART[kind] }}
       >
         <span className="flex items-start justify-between">
-          <span className="flex size-8 items-center justify-center rounded-full bg-white/25">
-            {ICONS[kind]}
-          </span>
+          <span className="flex size-8 items-center justify-center bg-white/25">{ICONS[kind]}</span>
           <span className="text-[26px] font-bold leading-none tabular-nums">{counts[kind]}</span>
         </span>
         <span className="text-[15px] font-semibold">{label}</span>
@@ -698,7 +695,7 @@ function Sidebar({
     <>
       {open ? <div className="fixed inset-0 z-30 bg-black/25 md:hidden" onClick={onClose} /> : null}
       <nav
-        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto border-e border-line-soft bg-white px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
+        className={`fixed inset-y-0 start-0 z-40 w-[280px] shrink-0 flex-col gap-6 overflow-y-auto border-e border-line bg-ground px-3.5 py-5 md:sticky md:top-0 md:z-0 md:flex md:h-dvh ${
           open ? "flex" : "hidden"
         }`}
       >
@@ -721,12 +718,12 @@ function Sidebar({
                   key={p.id}
                   href={`/p/${p.id}`}
                   onClick={onClose}
-                  className={`flex items-center gap-3 rounded-[10px] px-2 py-2 ${
-                    active ? "bg-ground" : "hover:bg-ground/60"
+                  className={`flex items-center gap-3 px-2 py-2 ${
+                    active ? "bg-white" : "hover:bg-white/60"
                   }`}
                 >
                   <span
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full"
+                    className="flex size-7 shrink-0 items-center justify-center"
                     style={{ background: color }}
                   >
                     <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
@@ -766,7 +763,7 @@ function Sidebar({
                 onChange={(e) => setName(e.target.value)}
                 onBlur={() => !name.trim() && setAdding(false)}
                 placeholder="Project name"
-                className="w-full rounded-[10px] bg-ground px-3 py-2 text-[15px] outline-none ring-2 ring-accent"
+                className="w-full border-b-2 border-ink bg-transparent px-2 py-2 text-[15px] outline-none"
               />
             </form>
           ) : (

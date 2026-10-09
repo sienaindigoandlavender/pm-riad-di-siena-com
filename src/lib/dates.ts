@@ -47,3 +47,13 @@ export function shortDate(iso: string, ref = today()): string {
   const p = parts(iso);
   return `${p.weekday.slice(0, 3)} ${p.day} ${p.month.slice(0, 3)}`;
 }
+
+/** The hour (0–23) in Marrakech. */
+export function marrakechHour(now = new Date()): number {
+  const iso = new Intl.DateTimeFormat("en-GB", {
+    timeZone: TZ,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(now);
+  return Number(iso);
+}

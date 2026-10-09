@@ -124,7 +124,7 @@ export function TaskRow({
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[13px] text-ink-3">
             {showProject && project ? (
               <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full" style={{ background: color }} />
+                <span className="size-2" style={{ background: color }} />
                 {project.name}
               </span>
             ) : null}
