@@ -12,6 +12,7 @@ import { AgendaRow, CalendarView } from "./CalendarView";
 import { useFeedEvents } from "./useFeedEvents";
 import { GanttView } from "./GanttView";
 import { IdeasView } from "./IdeasView";
+import { VisionView } from "./VisionView";
 import dynamic from "next/dynamic";
 import { HeroScene, tint } from "./HeroScene";
 import { Burger, Clock, WeatherIcon, useWeather } from "./Sky";
@@ -34,6 +35,7 @@ export type View =
   | { kind: "calendar" }
   | { kind: "gantt" }
   | { kind: "ideas" }
+  | { kind: "vision" }
   | { kind: "board"; id: string; name: string }
   | { kind: "project"; id: string }
   | { kind: "person"; id: string };
@@ -166,12 +168,14 @@ export function Workspace({
                 ? { title: "Timeline", color: SMART.gantt }
                 : view.kind === "ideas"
                   ? { title: "Ideas", color: SMART.ideas }
+                  : view.kind === "vision"
+                    ? { title: "Vision", color: SMART.vision }
                   : view.kind === "board"
                     ? { title: view.name, color: SMART.ideas }
                     : view.kind === "person"
                   ? { title: person(view.id).full, color: person(view.id).color }
                   : { title: project?.name ?? "Project", color: projectColor(project) };
-  const wide = view.kind === "calendar" || view.kind === "gantt" || view.kind === "board";
+  const wide = view.kind === "calendar" || view.kind === "gantt" || view.kind === "board" || view.kind === "vision";
 
   return (
     <div className="flex min-h-dvh">
@@ -246,6 +250,8 @@ export function Workspace({
               onOpen={setOpenId}
               openId={openId}
             />
+          ) : view.kind === "vision" ? (
+            <VisionView projects={ws.projects} tasks={ws.tasks} />
           ) : view.kind === "ideas" ? (
             <IdeasView projects={ws.projects} />
           ) : view.kind === "board" ? (
@@ -401,7 +407,7 @@ function Heading({
         label: "on the timeline",
       },
     ];
-  } else if (view.kind === "ideas" || view.kind === "board") {
+  } else if (view.kind === "ideas" || view.kind === "board" || view.kind === "vision") {
     stats = [];
   } else {
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
@@ -844,6 +850,11 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
 }
 
 const ICONS: Record<string, React.ReactNode> = {
+  vision: (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
+      <path d="M10 2.5l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L2.8 7.8l5-.7z" fill="#fff" />
+    </svg>
+  ),
   ideas: (
     <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
       <circle cx="5" cy="6" r="2.6" fill="#fff" />
@@ -1010,6 +1021,7 @@ function Sidebar({
           {tile("calendar", "/calendar", "Calendar")}
           {tile("gantt", "/gantt", "Timeline")}
           {tile("ideas", "/ideas", "Ideas")}
+          {tile("vision", "/vision", "Vision")}
         </div>
 
         <ProjectList ws={ws} view={view} live={live} onClose={onClose} />

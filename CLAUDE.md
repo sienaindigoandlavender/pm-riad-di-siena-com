@@ -26,7 +26,7 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 - `start_date`, `repeat`, `assignee` and the appointment/feed tables were added later: load falls back if they're missing and shows a notice to re-run `pm-setup.sql`.
 - Calendar merging lives in `src/lib/calendar.ts` (`itemsByDay`, `layoutDay` for overlaps).
 - Ideas (`/ideas`, `/ideas/[id]`, `pm_boards`): brainstorm boards. Round idea cards on a React Flow canvas (`BoardView.tsx`, loaded only on board pages), arrows between them, colours from the project palette, "Make it a task" creates a task in the board's project and the card shows its state. The whole canvas is one jsonb document saved 700ms after changes.
-- Next: Vision & roadmap (vision statement, horizons, goals linked to projects, milestones).
+- Vision (`/vision`, `VisionView.tsx`, `src/lib/vision.ts`): the vision statement, then goals on four horizons (Now, Next 3 months, This year, In 3 years). Goals link to projects (showing their open tasks), carry dated milestones ("Milestones ahead" lists the next ones), can be marked reached. One document stored in `pm_boards` under the fixed id `VISION_ID` (hidden from the Ideas list); saved 700ms after changes.
 
 ## Later
 - Separate logins per person, assigning tasks to the team (Zahra, Mouad), notifications. `pm_events` already records every change for this.
