@@ -78,3 +78,15 @@ alter table public.pm_tasks enable row level security;
 alter table public.pm_events enable row level security;
 alter table public.pm_appointments enable row level security;
 alter table public.pm_feeds enable row level security;
+
+-- Idea boards: a canvas of idea cards and arrows, saved as one document.
+create table if not exists public.pm_boards (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  project_id uuid references public.pm_projects (id) on delete set null,
+  data jsonb not null default '{"nodes":[],"edges":[]}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+alter table public.pm_boards enable row level security;

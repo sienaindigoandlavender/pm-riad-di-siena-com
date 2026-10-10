@@ -11,12 +11,20 @@ import { AppointmentPanel } from "./AppointmentPanel";
 import { AgendaRow, CalendarView } from "./CalendarView";
 import { useFeedEvents } from "./useFeedEvents";
 import { GanttView } from "./GanttView";
+import { IdeasView } from "./IdeasView";
+import dynamic from "next/dynamic";
 import { HeroScene, tint } from "./HeroScene";
 import { Burger, Clock, WeatherIcon, useWeather } from "./Sky";
 import { Hoopoe } from "./Hoopoe";
 import { TaskPanel } from "./TaskPanel";
 import { TaskRow } from "./TaskRow";
 import { useWorkspace, type WorkspaceApi } from "./useWorkspace";
+
+// The canvas library is only loaded on a board page.
+const BoardView = dynamic(() => import("./BoardView").then((m) => m.BoardView), {
+  ssr: false,
+  loading: () => <p className="px-2 text-[15px] text-ink-2">Opening the board…</p>,
+});
 
 export type View =
   | { kind: "today" }
@@ -25,6 +33,8 @@ export type View =
   | { kind: "flagged" }
   | { kind: "calendar" }
   | { kind: "gantt" }
+  | { kind: "ideas" }
+  | { kind: "board"; id: string; name: string }
   | { kind: "project"; id: string }
   | { kind: "person"; id: string };
 
@@ -154,10 +164,14 @@ export function Workspace({
               ? { title: "Calendar", color: SMART.calendar }
               : view.kind === "gantt"
                 ? { title: "Timeline", color: SMART.gantt }
-                : view.kind === "person"
+                : view.kind === "ideas"
+                  ? { title: "Ideas", color: SMART.ideas }
+                  : view.kind === "board"
+                    ? { title: view.name, color: SMART.ideas }
+                    : view.kind === "person"
                   ? { title: person(view.id).full, color: person(view.id).color }
                   : { title: project?.name ?? "Project", color: projectColor(project) };
-  const wide = view.kind === "calendar" || view.kind === "gantt";
+  const wide = view.kind === "calendar" || view.kind === "gantt" || view.kind === "board";
 
   return (
     <div className="flex min-h-dvh">
@@ -232,6 +246,10 @@ export function Workspace({
               onOpen={setOpenId}
               openId={openId}
             />
+          ) : view.kind === "ideas" ? (
+            <IdeasView projects={ws.projects} />
+          ) : view.kind === "board" ? (
+            <BoardView boardId={view.id} projects={ws.projects} tasks={ws.tasks} createTask={ws.createTask} />
           ) : view.kind === "today" ? (
             <>
               <TodayCalendar
@@ -383,6 +401,8 @@ function Heading({
         label: "on the timeline",
       },
     ];
+  } else if (view.kind === "ideas" || view.kind === "board") {
+    stats = [];
   } else {
     stats = [{ n: open.filter((t) => t.priority > 0).length, label: "flagged" }];
   }
@@ -824,6 +844,14 @@ function ProjectSettings({ ws, project }: { ws: WorkspaceApi; project: Project }
 }
 
 const ICONS: Record<string, React.ReactNode> = {
+  ideas: (
+    <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
+      <circle cx="5" cy="6" r="2.6" fill="#fff" />
+      <circle cx="15" cy="5" r="2.2" fill="#fff" />
+      <circle cx="10" cy="15" r="2.8" fill="#fff" />
+      <path d="M6.8 7.6l2.4 5M13.6 6.6l-2.6 6.4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  ),
   calendar: (
     <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden>
       <rect
@@ -929,7 +957,7 @@ function Sidebar({
   };
 
   const tile = (kind: keyof typeof SMART, href: string, label: string) => {
-    const active = view.kind === kind;
+    const active = view.kind === kind || (kind === "ideas" && view.kind === "board");
     return (
       <Link
         href={href}
@@ -948,7 +976,7 @@ function Sidebar({
             {ICONS[kind]}
           </span>
           <span className="font-display text-[28px] font-semibold leading-none tabular-nums">
-            {counts[kind]}
+            {kind in counts ? counts[kind as keyof typeof counts] : null}
           </span>
         </span>
         <span className="text-[15px] font-bold">{label}</span>
@@ -981,6 +1009,7 @@ function Sidebar({
           {tile("flagged", "/flagged", "Flagged")}
           {tile("calendar", "/calendar", "Calendar")}
           {tile("gantt", "/gantt", "Timeline")}
+          {tile("ideas", "/ideas", "Ideas")}
         </div>
 
         <ProjectList ws={ws} view={view} live={live} onClose={onClose} />
