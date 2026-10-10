@@ -199,7 +199,7 @@ export function Workspace({
       <main className={`min-w-0 flex-1 bg-bg ${open || appt ? "md:me-[452px]" : ""}`}>
         <div className="sticky top-0 z-10 flex h-[60px] items-center gap-2 bg-bg/95 ps-16 backdrop-blur-sm md:hidden">
           <Hoopoe mood="hello" size={34} />
-          <span className="font-display text-[21px] font-semibold">Hudhud</span>
+          <span className="font-display text-[21px] font-semibold">Oud</span>
         </div>
 
         <div
@@ -1023,7 +1023,7 @@ function Sidebar({
       >
         <div className="flex h-[38px] items-center gap-2 ps-12">
           <Hoopoe mood="hello" size={44} />
-          <span className="font-display text-[24px] font-semibold">Hudhud</span>
+          <span className="font-display text-[24px] font-semibold">Oud</span>
         </div>
         <div className="grid grid-cols-2 gap-2.5">
           {tile("today", "/", "Today")}

@@ -40,7 +40,7 @@ function Gate() {
           <Hoopoe mood={wrong ? "sit" : "hello"} size={112} />
         </div>
         <h1 className="mt-2 font-display text-[28px] font-semibold text-ink">Knock knock</h1>
-        <p className="mt-1 text-[15px] text-ink-3">Hudhud keeps the garden gate.</p>
+        <p className="mt-1 text-[15px] text-ink-3">Hudhud the hoopoe keeps the garden gate of Oud.</p>
         <label htmlFor="pw" className="sr-only">
           Password
         </label>

@@ -1,6 +1,6 @@
-# Tasks (pm.riaddisiena.com) — notes for Claude
+# Oud (pm.riaddisiena.com) — notes for Claude
 
-Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mature version becomes a standalone app for all her projects, not only Riad di Siena. Not a SaaS.
+Jacqueline's own task and project manager, called **Oud** (renamed from Hudhud on 2026-10-10; Hudhud is still the hoopoe mascot). Starts at pm.riaddisiena.com; the mature version becomes a standalone app for all her projects, not only Riad di Siena. Not a SaaS.
 
 ## Design
 - Cute and whimsical: joy and fun. Picture-book flat, round friendly shapes, rounded sheets and pill buttons. Fredoka for headings, DM Sans for body. Cream page (#fffaf3), plum ink (#2b2238).
