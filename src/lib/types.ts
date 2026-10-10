@@ -81,3 +81,23 @@ export type TaskPatch = Partial<
 >;
 
 export const PRIORITY_LABEL = ["None", "Low", "Medium", "High"] as const;
+
+/** An idea card on a board. Position is canvas coordinates. */
+export type IdeaCard = {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  task_id?: string | null;
+};
+export type IdeaLink = { id: string; from: string; to: string; fromSide?: string | null; toSide?: string | null };
+export type BoardData = { nodes: IdeaCard[]; edges: IdeaLink[] };
+export type Board = {
+  id: string;
+  name: string;
+  project_id: string | null;
+  data: BoardData;
+  updated_at: string;
+};
+export type BoardSummary = Omit<Board, "data"> & { ideas: number };
