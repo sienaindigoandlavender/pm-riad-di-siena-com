@@ -4,7 +4,7 @@ import "@fontsource-variable/dm-sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tasks",
+  title: "Oud",
   robots: { index: false, follow: false },
 };
 

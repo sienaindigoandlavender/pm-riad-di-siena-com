@@ -17,7 +17,7 @@ export async function middleware(req: NextRequest) {
   const cookie = req.cookies.get(SESSION_COOKIE)?.value;
   if (cookie && sameText(cookie, await sessionValue())) return NextResponse.next();
 
-  if (isApi) return NextResponse.json({ error: "Hudhud doesn't know you yet" }, { status: 401 });
+  if (isApi) return NextResponse.json({ error: "Oud doesn't know you yet" }, { status: 401 });
 
   const login = req.nextUrl.clone();
   login.pathname = "/login";
