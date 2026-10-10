@@ -217,3 +217,22 @@
     transition: none !important;
   }
 }
+
+
+/* Notes: rendered text */
+.note-render h2 { font-family: var(--font-display, inherit); font-size: 24px; font-weight: 600; margin: 1.1em 0 0.35em; }
+.note-render h3 { font-family: var(--font-display, inherit); font-size: 20px; font-weight: 600; margin: 1em 0 0.3em; }
+.note-render h4 { font-family: var(--font-display, inherit); font-size: 17px; font-weight: 600; margin: 0.9em 0 0.25em; }
+.note-render p { margin: 0 0 0.7em; }
+.note-render ul { margin: 0 0 0.8em; padding-inline-start: 1.25em; list-style: disc; }
+.note-render li { margin: 0.15em 0; }
+.note-render li.check { list-style: none; margin-inline-start: -1.25em; display: flex; gap: 0.5em; align-items: baseline; }
+.note-render .note-box { display: inline-block; width: 15px; height: 15px; border-radius: 999px; border: 2px solid #7DBB5A; flex-shrink: 0; transform: translateY(2px); }
+.note-render .note-box.on { background: #7DBB5A; }
+.note-render blockquote { border-inline-start: 3px solid #e7dccb; padding-inline-start: 0.9em; color: #6e647c; margin: 0 0 0.8em; }
+.note-render code { background: #f6efe4; border-radius: 6px; padding: 0.05em 0.35em; font-size: 0.92em; }
+.note-render a { color: #2b2238; text-decoration: underline; text-decoration-color: #c9bda9; text-underline-offset: 3px; }
+.note-render a.note-link { text-decoration: none; background: #e4f1dc; border-radius: 999px; padding: 0.05em 0.5em; font-weight: 600; }
+.note-render a.note-link.missing { background: transparent; border: 1.5px dashed #7DBB5A; }
+.note-render .note-tag { color: #4d7a35; font-weight: 600; }
+.note-render .note-empty { color: #6e647c; }

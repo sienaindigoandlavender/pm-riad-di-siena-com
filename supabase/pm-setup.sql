@@ -90,3 +90,17 @@ create table if not exists public.pm_boards (
   deleted_at timestamptz
 );
 alter table public.pm_boards enable row level security;
+
+-- Notes: her own little Obsidian. Plain text with [[links]] and #tags.
+create table if not exists public.pm_notes (
+  id uuid primary key default gen_random_uuid(),
+  title text not null default '',
+  body text not null default '',
+  project_id uuid references public.pm_projects (id) on delete set null,
+  tags text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  deleted_at timestamptz
+);
+create index if not exists pm_notes_updated_idx on public.pm_notes (updated_at desc) where deleted_at is null;
+alter table public.pm_notes enable row level security;

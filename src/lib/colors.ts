@@ -58,6 +58,7 @@ export const SMART = {
   gantt: "#D97BBF",
   ideas: "#3FA7A5",
   vision: "#E26D8E",
+  notes: "#7DBB5A",
 } as const;
 
 export const FLAG_COLORS = ["", "#E0AE1F", "#F2994A", "#E26D8E"] as const;
