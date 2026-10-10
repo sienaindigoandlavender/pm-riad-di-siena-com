@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, logEvent } from "@/lib/db";
+import { VISION_ID } from "@/lib/vision";
 
 const missingTable = (m: string) => /pm_boards/.test(m) && /does not exist|schema cache/i.test(m);
 
@@ -11,6 +12,7 @@ export async function GET() {
     .from("pm_boards")
     .select("id, name, project_id, data, updated_at")
     .is("deleted_at", null)
+    .neq("id", VISION_ID)
     .order("updated_at", { ascending: false });
   if (error) {
     return NextResponse.json(
