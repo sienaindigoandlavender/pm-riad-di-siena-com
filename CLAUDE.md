@@ -14,7 +14,7 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 - Calm and fast: changes show instantly (optimistic) and save in the background.
 
 ## Now
-- No password while building.
+- The garden gate (`src/middleware.ts`, `src/lib/auth.ts`, `/login`): one password (`PM_PASSWORD`) sets a year-long httpOnly cookie signed with `PM_SESSION_SECRET`; rotating the secret signs everyone out. Machines (Make, Claude) reach `/api/*` with `Authorization: Bearer <PM_API_TOKEN>`. If the password or secret env var is missing, the gate stays open (old behaviour).
 - Views: Today ("On the calendar" first, then plan the day, carry over from earlier, up next, done today), Upcoming, Inbox, Flagged, Calendar (Day/Week time grid, Month, Year; repeating tasks show next visits as dashed ghosts, daily ones two weeks ahead), Timeline (Gantt by project, start → due), Projects, People (`/people/[id]`).
 - Appointments (`pm_appointments`): title, date, all-day or start/end time, repeat, place, project, who, notes. A new one is a draft until "Add". Click an hour in Day/Week to start one there.
 - iCal feeds (`pm_feeds`): any .ics / webcal link (Google, iCloud, Airbnb, Booking). `/api/feeds/events` fetches on the server (cached 15 min), expands repeats and moved/cancelled occurrences with ical.js, converts to Marrakech time (`src/lib/ics.ts`). Read-only in the app.
@@ -27,8 +27,8 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 - Calendar merging lives in `src/lib/calendar.ts` (`itemsByDay`, `layoutDay` for overlaps).
 
 ## Later
-- Separate logins, assigning tasks to the team (Zahra, Mouad), notifications. `pm_events` already records every change for this.
-- Add auth before any team member gets the link. The repo is public.
+- Separate logins per person, assigning tasks to the team (Zahra, Mouad), notifications. `pm_events` already records every change for this.
+- The repo is public: never put secrets in code; the gate's values live only in Vercel env vars.
 
 ## Stack
 Next.js 15 (App Router), TypeScript, Tailwind v4 (tokens in `src/app/globals.css`), pnpm, Vercel, Supabase (service role, server only). Tables prefixed `pm_`, setup in `supabase/pm-setup.sql`.
