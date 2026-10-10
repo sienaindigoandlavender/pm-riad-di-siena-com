@@ -27,6 +27,7 @@ Jacqueline's own task and project manager. Starts at pm.riaddisiena.com; the mat
 - Calendar merging lives in `src/lib/calendar.ts` (`itemsByDay`, `layoutDay` for overlaps).
 - Ideas (`/ideas`, `/ideas/[id]`, `pm_boards`): brainstorm boards. Round idea cards on a React Flow canvas (`BoardView.tsx`, loaded only on board pages), arrows between them, colours from the project palette, "Make it a task" creates a task in the board's project and the card shows its state. The whole canvas is one jsonb document saved 700ms after changes.
 - Vision (`/vision`, `VisionView.tsx`, `src/lib/vision.ts`): the vision statement, then goals on four horizons (Now, Next 3 months, This year, In 3 years). Goals link to projects (showing their open tasks), carry dated milestones ("Milestones ahead" lists the next ones), can be marked reached. One document stored in `pm_boards` under the fixed id `VISION_ID` (hidden from the Ideas list); saved 700ms after changes.
+- Notes (`/notes`, `/notes/[id]`, `pm_notes`, `NotesView.tsx`, `src/lib/notes.ts`): her own small Obsidian. Plain text with a safe Markdown subset (headings, bold/italic, lists, [ ] checkboxes, quotes, code, links), `[[Note title]]` links (a missing one is created on click), `#tags` (stored in `tags`), backlinks ("Linked from"), search, project per note. Read/Write toggle; autosave. Claude can file notes via `POST /api/notes` with the bearer token.
 
 ## Later
 - Separate logins per person, assigning tasks to the team (Zahra, Mouad), notifications. `pm_events` already records every change for this.
